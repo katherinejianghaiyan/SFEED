@@ -1,0 +1,145 @@
+﻿@using Model.Item;
+@{
+    List<ItemClass> classList = ViewBag.ClassList;
+}
+<div class="modal-dialog" id="itemClass">
+    <div class="modal-content">
+        <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+            <h4 class="modal-title">@ViewBag.LabelEdit</h4>
+        </div>
+        <div class="modal-body">
+            <div class="form-horizontal">
+                <div class="form-group">
+                    <label for="name" class="col-sm-2 control-label">@ViewBag.LabelClassName</label>
+                    <div class="col-sm-4">
+                        <input type="text" class="form-control" id="name" data-required />
+                    </div>
+                    <label for="name" class="col-sm-2 control-label">@ViewBag.LabelSort</label>
+                    <div class="col-sm-2">
+                        <input type="text" class="form-control" id="sort" data-required />
+                    </div>
+                    <div class="col-sm-2">
+                        <button type="button" onclick="ItemClass.addRow()" class="btn btn-success">@ViewBag.LabelAdd</button>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-1"></div>
+                <div class="col-sm-10">
+                    <table id="classList" class="table dataTable">
+                        <thead>
+                            <tr>
+                                <th>ClassGuid</th>
+                                <th>@ViewBag.LabelClassName</th>
+                                <th>@ViewBag.LabelSort</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (ItemClass iclass in classList)
+                            {
+                                <tr>
+                                    <td>@iclass.CLassGUID</td>
+                                    <td>@iclass.ClassName</td>
+                                    <td>@iclass.Sort</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">@ViewBag.LabelClose</button>
+            <button type="button" onclick="ItemClass.save()" class="btn btn-primary">@ViewBag.LabelSave</button>
+        </div>
+    </div>
+</div>
+<script>
+    var ItemClass = {
+        tbl: null,
+        addRow: function () {
+            if (ItemClass.tbl === null) return;
+            if (!ItemClass.checkInput()) return;
+            ItemClass.tbl.row.add([
+                '',
+                $('#name').val(),
+                $('#sort').val()
+            ]).draw();
+        },
+        checkInput: function () {
+            var checked = true;
+            $('#itemClass div.form-horizontal input[data-required]').each(function () {
+                if ($(this).val() == '') {
+                    $(this).parent('div').addClass('has-error');
+                    checked = false;
+                }
+            });
+            return checked;
+        },
+        save: function () {
+            if (ItemClass.tbl === null) return;
+            var jsonBuilder = new StringBuilder();
+            $('#itemClass tbody input[data-row]').each(function () {
+                var rdata = ItemClass.tbl.row($(this).parents('tr')).data();
+                if (jsonBuilder.length() > 0) jsonBuilder.append(',');
+                jsonBuilder.append('{"ClassGUID":"' + rdata[0] + '","ClassName":"' + rdata[1] + '","Sort":"' + $(this).val() + '"}');
+            });
+            if (jsonBuilder.length() > 0) {
+                jsonBuilder.insert(0, '{"data":[').append(']}');
+                $('#itemClass button').prop('disabled', true);
+                actionRequest.post({
+                    url: '@Url.Content("~/api/SEMIApi/EditFMItemClass/" + ViewBag.Language)',
+                    postData: $.parseJSON(jsonBuilder.toString()),
+                    success: function (response) {
+                        if (response !== undefined && response !== null && response.Status == 'ok') {
+                            $('#commonModal').modal('hide');
+                        }
+                        else {
+                            $('#itemClass button').prop('disabled', false);
+                            $('#alertModal .modal-body').html('<p><strong>'
+                               + (response === undefined || response === null ? "Server error" : response.Msg) + '</strong></p>');
+                            $('#alertModal').modal('show');
+                        }
+                    },
+                    error: function (msg) {
+                        $('#alertModal .modal-body').html('<p><strong>' + msg + '</strong></p>');
+                        $('#alertModal').modal('show');
+                        $('#itemClass button').prop('disabled', false);
+                    }
+                });
+            }
+        }
+    };
+    $(function () {
+        $('#sort').inputmask({"mask":"9[99]"});
+        $('#itemClass div.form-horizontal input[data-required]').on('focus', function () {
+            $(this).parent('div').removeClass('has-error');
+        });
+        ItemClass.tbl = $('#classList').DataTable({
+            searching: false,
+            ordering: false,
+            paging: false,
+            info: false,
+            lengthChange: false,
+            processing: false,
+            stateSave: false,
+            deferRender: true,
+            columnDefs: [{
+                targets: 2,
+                render: function (data, type, row, meta) {
+                    return '<input type="text" data-row data-required class="col-sm-2" value="' + data + '" />';
+                }
+            },
+            {
+                targets: [0],
+                visible: false
+            }],
+            createdRow: function (row, data, dataIndex) {
+                $(row).find('input[data-required]').inputmask({ "mask": "9[99]" });
+            }
+        });
+    });
+</script>

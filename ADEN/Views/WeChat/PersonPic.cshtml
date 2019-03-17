@@ -1,0 +1,149 @@
+﻿@using WeChatEvent;
+
+@{
+    Layout = null;
+    PersonPic picData = (PersonPic)Model;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width" />
+    <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport" />
+    <title>头像</title>
+    <link rel="shortcut icon" href="@Url.Content("~/favicon.ico")" />
+    <link href="~/AdminLTE/bootstrap/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="~/AdminLTE/bootstrap/css/ladda-themeless.min.css" rel="stylesheet" />
+    <link href="~/AdminLTE/plugins/cropper/cropper.min.css" rel="stylesheet" />
+    <style>
+        .upfilebox {
+            position: relative;
+        }
+
+            .upfilebox input {
+                width: 80px;
+                height: 48px;
+                position: relative;
+                z-index: 9;
+                opacity: 0;
+            }
+
+            .upfilebox label {
+                position: absolute;
+                background: #501521;
+                display: inline-block;
+                color: #fff;
+                width: 75px;
+                height: 48px;
+                line-height: 48px;
+                text-align: center;
+                top: 8px;
+                left: 0px;
+            }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-default navbar-static-top" role="navigation">
+        <div class="container">
+            <div class="row">
+                <div class="col-xs-4">
+                    <div class="upfilebox" style="float:left">
+                        <input type="file" id="file" accept="image/*" />
+                        <label>选择照片</label>
+                    </div>
+                </div>
+                <div class="col-xs-4">
+                    <p style="margin-top:10px;font-size:16px;font-family:Arial;font-weight:bolder;color:#800000;">@picData.EmpName</p>
+                    <p style="margin-top:-10px;font-size:16px;font-family:Arial;font-weight:bolder;color:#800000;">@picData.EmpID</p>  
+                </div>
+                <div class="col-xs-4">
+                    <button id="save" class="btn btn-success navbar-btn btn-block btn-flat ladda-button" data-style="zoom-out" style="float:right;height:48px;width:80px">保存</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+    <div class="container" id="content">
+        <div class="img-container">
+            <img id="preview" style="width:100%;height:100%" croppered="no" src="@picData.PicData" />
+        </div>
+        <form id="form"></form>
+    </div>
+    <script src="~/AdminLTE/plugins/jQuery/jQuery-2.2.0.min.js"></script>
+    <script src="~/AdminLTE/bootstrap/js/bootstrap.min.js"></script>
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <script src="~/AdminLTE/bootstrap/js/ie10-viewport-bug-workaround.js"></script>
+    <script src="~/AdminLTE/bootstrap/js/spin.min.js"></script>
+    <script src="~/AdminLTE/bootstrap/js/ladda.min.js"></script>
+    <script src="~/AdminLTE/plugins/cropper/cropper.min.js"></script>
+    <script src="~/Scripts/Ajax.js"></script>
+    <script>
+        $(function () {
+
+            var createRequest = ApiRequest();
+            var request = new createRequest();
+
+            var URL = window.URL || window.webkitURL;
+
+            if (URL) {
+                $('#file').on('change', function () {
+                    var file = this.files[0];
+                    if (/^image\//.test(file.type)) {
+                        $('#preview').cropper("destroy").attr('src', URL.createObjectURL(file)).attr('croppered', 'yes').cropper({
+                            aspectRatio: 4 / 3,
+                            autoCropArea: 0.5,
+                            zoomable: false,
+                            cropBoxResizable: false,
+                            dragMode: 'none'
+                        });
+                    }
+                    else {
+                        alert('文件格式错误,请选择图片!');
+                    }
+                });
+            }
+            else {
+                $('#file').prop('disabled', true);
+                alert('此系统不支持上传图片');
+            }
+
+            $('#save').on('click', function () {
+                if ($('#preview').attr('croppered') == 'yes') {
+                    var l = Ladda.create($(this)[0]);
+                    l.start();
+                    $('#file').prop('disabled', true);
+                    var canvas = $('#preview').cropper("getCroppedCanvas");
+                    setTimeout(function () {
+                        var picdata = canvas.toDataURL("image/png");
+                        request.post({
+                            url: '@Url.Content("~/api/WeChatApi/SavePersonPic")',
+                            postData: {
+                                Token: 'adenservices',
+                                EmpID: '@picData.EmpID',
+                                PicData: picdata
+                            },
+                            success: function (response) {
+                                if (response.Status === 'ok') {
+                                    $('#preview').cropper("destroy").attr('src', picdata).attr('croppered', 'no');
+                                    alert("数据保存成功!");
+                                }
+                                else alert("保存失败,请重新保存!");
+                            },
+                            error: function (msg) {
+                                alert("网络或服务器错误,请联系公司!");
+                            },
+                            complete: function (xhr) {
+                                l.stop();
+                                $('#file').prop('disabled', false);
+                            }
+                        });
+
+                    }, 100);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

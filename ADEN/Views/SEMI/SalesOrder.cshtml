@@ -1,0 +1,464 @@
+﻿@using Model.Site;
+@{
+    List<SiteMast> siteList = ViewBag.SiteList;
+}
+@using System.Media;
+
+<div class="row">
+    <div class="col-xs-12">
+        <div class="box">
+            <div class="box-body">
+                <div id="closews">网络连接不可用</div>
+                <audio controls="controls" id="orderAlert" hidden>
+                    <source src="~/music/18.mp3" type="audio/mpeg" />
+                </audio>
+                <input id="maxOrderId"  hidden />
+                <input id="needWork" hidden />
+                <div class="col-lg-15 col-sm-15 form-horizontal form-group">
+                    <div class="col-lg-3 col-sm-3">
+                        <select id="site" class="form-control">
+                            @foreach (SiteMast site in siteList)
+                            {
+                                <option value='@Html.Raw(site.SiteGuid)@Html.Raw(site.needWork ? " ToBeWorked":"")'>@Html.Raw(site.SiteCode + "/" + site.SiteName)</option>   
+                            }
+                        </select>
+                    </div>
+                    <div class="col-lg-2 col-sm-2">
+                        <select id="orderstatus" class="form-control">
+                            <option value="">@ViewBag.LabelAllDeliverStatus</option>
+                            <option value="ToBeWorked" id="optTobeWorked">@ViewBag.LabelToBeWorked</option>
+                            <option value="ToBeShipped">@ViewBag.LabelDeliverNo</option>
+                            <option value="Shipped">@ViewBag.LabelDeliverOK</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-4 col-sm-4">
+                        <div class="input-group">
+                            <span class="input-group-addon"><i class="fa fa-calendar"></i></span>
+                            <input type="text" class="form-control" id="orderDate" @Html.Raw(ViewBag.Language == "zh" ? " value=\"" + DateTime.Now.ToString("yyyy-MM-dd") + "\" placeholder=\"yyyy-mm-dd\"" : " value=\"" + DateTime.Now.ToString("MM/dd/yyyy") + "\" placeholder=\"mm/dd/yyyy\"") />
+                            <span class="input-group-btn">
+                                <button type="button" class="btn btn-primary ladda-button" data-style="zoom-out" id="query" onclick="Order.startSearch()">
+                                    @ViewBag.LabelQuery
+                                </button>
+                            </span>
+                        </div>
+                    </div>
+                    <!--<span>
+                        <button type="button" class="btn btn-primary ladda-button" onclick="Order.checkOrderStatus()">测试</button>
+                    </span>-->
+                    <div class="col-lg-2 col-sm-2">
+                        <div class="input-group">
+                            <span class="input-group-btn">
+                                <button type="button" class="btn btn-warning ladda-button" data-style="zoom-out" id="deliver" onclick="Order.deliver()">
+                                    @ViewBag.LabelDeliver
+                                </button>
+                                <button type="button" class="btn btn-warning ladda-button" data-style="zoom-out" id="process" onclick="Order.deliver()">
+                                    @ViewBag.LabelProcess
+                                </button>
+                            </span>
+
+                            <span class="input-group-btn">
+                                <button type="button" class="btn btn-success ladda-button" data-style="zoom-out" id="print" onclick="Order.print(this)">
+                                    @ViewBag.LabelPrint
+                                </button>
+                            </span>
+                        </div>
+                    </div>
+                    <div class=" col-lg-2 col-sm-2 input-group" id="divWechat">
+                        <input type="text" id="msgKey" placeholder="@ViewBag.LabelWXMsg" class="form-control" />
+                        <span class="input-group-btn">
+                            <button type="button" class="btn btn-success ladda-button" id="btnWechat" onclick="Order.sendmsg(this)">@ViewBag.LabelWechat</button>
+                        </span>
+                    </div>
+                </div>
+
+                <table id="salesOrder" class="table dataTable">
+                    <thead>
+                        <tr>
+                            <!--<th></th>-->
+                            <th>@ViewBag.LabelOrderNumber</th>
+                            <th>@ViewBag.LabelUserName</th>
+                            <th>@ViewBag.LabelMobileNbr</th>
+                            <th>@ViewBag.LabelDepartment</th>
+                            <th>@ViewBag.LabelSection</th>
+                            <th>@ViewBag.LabelRequireDate</th>
+                            <th>@ViewBag.LabelOrderAmt</th>
+                            <th>@ViewBag.LabelPaymentMethod</th>
+                            <th>@ViewBag.LabelShipToAddr</th>
+                            <th>@ViewBag.LabelDeliver</th>
+                            <th>@ViewBag.LabelComment</th>
+                            <th>@ViewBag.LabelDetail</th>
+                            <th><input type="checkbox" id="parentck" class="minimal"></th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/javascript" src="~/Scripts/reconnecting-websocket.min.js"></script>
+<script type="text/javascript" src="~/Scripts/ws.js"></script>
+<script>
+
+
+    var ajaxEdit = function () {
+        var data = [];
+
+            actionRequest.post({
+                url: '@Url.Content("~/api/SEMIApi/CheckSOStatus/" + ViewBag.Language)',
+                postData: { orderCode: '18072017389356', orderstatus: $('#orderstatus').children('option:selected').val(), user: '@ViewBag.UserID' },
+                success: function (data) {
+                    $('#alertModal .modal-body').html('<p><strong>' + JSON.stringify(data) + '</strong></p>');
+                    $('#alertModal').modal('show');
+
+                    setTimeout(function () {
+                        $('#alertModal').modal('hide');
+                    }, 3000);
+                },
+                error: function (msg) {
+
+                },
+            });
+    };
+
+    var Order = {
+        tbl: null,
+        clear: function () {
+            if (Order.tbl != undefined && Order.tbl != null) {
+                Order.tbl.clear();
+                Order.tbl.draw();
+            }
+        },
+        startSearch: function () {
+            Order.search();
+
+            //webSocket:
+            if ($('#needWork').val() != "") {
+                ws.init({
+                    wskey: $('#site').val().substr(0, 36)+ "|@ViewBag.NewId"
+                }).connect(); deliver
+
+                ws.onmessage = function (message) {
+                    console.log("receive:" + message.data);
+                    if (typeof (message.data) == "undefined" || message.data == null || message.data == "")
+                        return;
+                    Order.search();
+                };
+            }
+        },
+        //测试用
+        checkOrderStatus: function () {
+            ajaxEdit();
+        },
+        search: function () {
+            $('#print').hide();
+            $('#deliver').hide();
+            $('#process').hide();
+            if (Order.tbl === null) {
+				Order.tbl = $('#salesOrder').DataTable({
+					searching: false,
+					lengthMenu: [[10, 15, 30, -1], [10, 15, 30, "ALL"]],
+					dom: 'rt<"bottom"iflp<"clear">>',
+					processing: true,
+					stateSave: false,
+					deferRender: true,
+					language: {
+						"processing": "@ViewBag.LabelLoading",
+						"zeroRecords": "@ViewBag.LabelNoData",
+						"lengthMenu": "@ViewBag.LabelLengthMenu",
+						"info": "@ViewBag.LabelTableInfo",
+						"infoEmpty": "@ViewBag.LabelTableInfoEmpty",
+						"paginate": {
+							"first": "@ViewBag.LabelFirstPage",
+							"previous": "@ViewBag.LabelPreviousPage",
+							"next": "@ViewBag.LabelNextPage",
+							"last": "@ViewBag.LabelLastPage"
+						}
+                    },
+                    createdRow: function (row, data, index) {
+
+                        if ($('#orderstatus').val() == "ToBeWorked") {
+                            if (data["tobeWorked"] == "") {
+                                $("td", row).eq(7).html('');
+                            }
+                            else if (data["tobeWorked"] != "") {
+                                $('#process').show();
+                            }
+                        } else {
+                            if (data["ShippedDate"] != "") {
+                                $("td", row).eq(7).html('');
+                            }
+                            else if (data["ShippedDate"] == "") {
+                                $('#print').show();
+                                $('#deliver').show();
+                            }
+                        }
+                        if ($('#maxOrderId').val()=="")
+                            $('#maxOrderId').val(data["dataLength"]);
+                        else {
+                            if ($('#maxOrderId').val() < data["dataLength"]) {
+                                document.getElementById("orderAlert").play();
+                                $('#maxOrderId').val(data["dataLength"]);
+                            }
+                        }
+                    },
+
+                    ajax: {
+                        "url": '@Url.Content("~/api/SEMIApi/GetTableSODatas/" + ViewBag.Language)',
+						"type": "POST",
+						"data": function (d) {
+							d.SiteGuid = $('#site').children('option:selected').val().substr(0,36),
+                                d.OrderDate = $('#orderDate').val(),
+                                d.OrderStatus=$('#orderstatus').val()
+                        },
+					},
+                    columns: [
+                                //{ class: 'details-control', orderable: false, data: null, defaultContent: '' },
+								{ data: "OrderCode" },
+                                { data: "UserName" },
+                                { data: "mobile" },
+                                { data: "department" },
+                                { data: "section"},
+								{ data: "RequiredDate" },
+                                { data: "PaymentAmount" },
+                                { data: "PaymentMethod" },
+                                { data: "shipToAddr" },
+                                { data: "ShippedDate" },
+                                { data: "comments" }
+					],
+                    columnDefs: [
+                        {
+                            targets: 11,
+                            data: null,
+                            defaultContent: '<button class="btn btn-primary btn-xs ladda-button" data-style="zoom-out">'
+                                + '<i class="fa fa-list-ol"></i></button>'
+                        },
+						{
+							targets: 12,
+                            data: null,
+                            defaultContent:'<input type="checkbox" class="minimal">',
+                            orderable: false,
+                        },
+					]
+                }).on('draw.dt', function () {
+					$('#salesOrder tbody input[type="checkbox"].minimal').iCheck({
+						checkboxClass: 'icheckbox_minimal-blue',
+						radioClass: 'iradio_minimal-blue'
+					}).iCheck('uncheck');
+                    $('#parentck').iCheck('uncheck');
+				});
+
+                $('#salesOrder tbody').on('click', 'button', function () {
+                    var data = Order.tbl.row($(this).parents('tr')).data();
+                    Order.detail($(this)[0], data);
+                });
+			}
+            else {
+                Order.tbl.ajax.reload();
+            }
+        },
+
+
+		detail: function (o, data) {
+			if (action) return;
+			else {
+				action = true;
+				$('#commonModal').html('');
+			}
+			var l = Ladda.create(o);
+			l.start();
+			actionRequest.post({
+				url: '@Url.Content("~/SEMI/salesOrderDetail/" + ViewBag.Language)',
+				postData: {
+                    OrderGuid: data === undefined || data === null ? '' : data.HeadGUID,
+                    userGuid: '@ViewBag.UserID',
+                    orderstatus: $('#orderstatus').val()
+				},
+				dataType: 'html',
+				success: function (response) {
+					$('#commonModal').html(response);
+                    $('#commonModal').modal('show');
+				},
+				complete: function (xHR) {
+					action = false;
+					l.stop();
+				}
+			});
+        },
+        deliver: function (o) {
+            var orderGuids = [];
+            $('#salesOrder tbody input[type="checkbox"].minimal').each(function () {
+                if ($(this).prop('checked')) {
+                    orderGuids.push({ HeadGUID: Order.tbl.row($(this).parents('tr')).data().HeadGUID });
+                }
+            });
+            if (orderGuids.length == 0) {
+                return;
+            }
+            var status = $('#orderstatus').val();
+            if (status == null || status=='')
+              var orderstatus = "ToBeShipped";
+            else
+                orderstatus = $('#orderstatus').val();
+            actionRequest.post({
+                url: '@Url.Content("~/api/SEMIApi/DeliverSO/" + @ViewBag.Language)',
+                postData: { data: orderGuids, orderstatus: orderstatus, user: '@ViewBag.UserID' },
+                success: function (data) {
+                    if (data == undefined || data == null) {
+                        $('#alertModal .modal-body').html('<p><strong>服务器没有响应,请刷新重试</strong></p>');
+                    }
+                    else {
+                        if (data.Status === 'ok') {
+                            $('#alertModal .modal-body').html('<p><strong>数据保存成功</strong></p>');
+                        }
+                        else {
+                            $('#alertModal .modal-body').html('<p><strong>数据处理异常,请刷新重试</strong></p>');
+                        }
+                    }
+                    Order.clear();
+                    $('#alertModal').modal('show');
+                    Order.search("1");
+                },
+                error: function (msg) {
+                    $('#alertModal .modal-body').html('<p><strong>' + msg + '</strong></p>');
+                    $('#alertModal').modal('show');
+                },
+                complete: function (xHR) {
+                    l.stop();
+                }
+            });
+        },
+	    sendmsg: function (o) {
+	        if($('#orderDate').val() !=  new Date().format("yyyy-MM-dd")){
+	            $('#alertModal .modal-body').html('<p><strong>@ViewBag.LabelSendTodayMsg</strong></p>');
+	            $('#alertModal').modal('show');
+	        }
+	        else{
+	            var msg = $.trim($('#msgKey').val());
+	            if(msg == '') {
+	                $('#alertModal .modal-body').html('<p><strong>@ViewBag.LabelNoData</strong></p>');
+	                $('#alertModal').modal('show');
+	            }
+	            else {
+	                var weChatIds = [];
+	                $('#salesOrder tbody input[type="checkbox"].minimal').each(function () {
+	                    if ($(this).prop('checked')) {
+	                        weChatIds.push(Order.tbl.row($(this).parents('tr')).data().WechatID);
+	                    }
+	                });
+	                if (weChatIds.length == 0) {
+	                    $('#alertModal .modal-body').html('<p><strong>@ViewBag.LabelNoSendPerson</strong></p>');
+	                    $('#alertModal').modal('show');
+	                }
+	                else {
+	                    var l = Ladda.create(o);
+	                    l.start();
+	                    actionRequest.post({
+	                        url: '@Url.Content("http://web.adenservices.com/api/WxMessage.ashx")',
+	                        dataType: 'text',
+	                        postData: JSON.stringify({
+	                            WechatIDs: weChatIds,
+	                            msg: msg,
+	                            date: $('#orderDate').val()
+	                        }),
+	                        success: function (response) {
+	                            if (response == 'ok') {
+	                                $('#alertModal .modal-body').html('<p><strong>@ViewBag.LabelSentOK</strong></p>');
+	                                $('#alertModal').modal('show');
+	                            }
+	                            else {
+	                                $('#alertModal .modal-body').html('<p><strong>Error:</strong>' + response + '</p>');
+	                                $('#alertModal').modal('show');
+	                            }
+	                        },
+	                        error: function (msg) {
+	                            $('#alertModal .modal-body').html('<p><strong>Error:</strong>' + msg + '</p>');
+	                            $('#alertModal').modal('show');
+	                        },
+	                        complete: function (xHR) {
+	                            l.stop();
+	                        }
+	                    });
+	                }
+	            }
+	        }
+        },
+        print: function (o, data) {
+            var web = window.document.body.innerHTML;
+            if (action) return;
+			else {
+				action = true;
+				$('#commonModal').html('');
+			}
+			var l = Ladda.create(o);
+			l.start();
+			actionRequest.post({
+				url: '@Url.Content("~/SEMI/SOPrintDetail/" + ViewBag.Language)',
+				postData: {
+                    siteguid: $('#site').val().substr(0,36),
+                    orderDate: $('#orderDate').val(),
+				},
+				dataType: 'html',
+				success: function (response) {
+                    $('#commonModal').html(response);
+
+                    var obj = $('#commonModal').html();
+                    var new_iframe = document.createElement('IFRAME');
+                    var doc = null;
+                    new_iframe.setAttribute('style', 'width:0px;height:0px;position:absolute;left:-2000px;top:-2000px;');
+                    new_iframe.setAttribute('align', 'left');
+                    document.body.appendChild(new_iframe);
+                    doc = new_iframe.contentWindow.document;
+                    doc.write('<div style="width:100%;height:auto;min-width:1100px;margin:0px auto;"align="left">' + obj + '</div>');
+                    doc.close();
+                    new_iframe.contentWindow.focus();
+                    new_iframe.contentWindow.print();
+
+				},
+				complete: function (xHR) {
+					action = false;
+                    l.stop();
+				}
+            });
+        }
+	};
+    $(function () {
+		$('#parentck').iCheck({
+			checkboxClass: 'icheckbox_minimal-blue',
+			radioClass: 'iradio_minimal-blue',
+			checked: true
+		}).on('ifChecked', function () {
+			$('#salesOrder tbody input[type="checkbox"].minimal').iCheck('check');
+		}).on('ifUnchecked', function () {
+			$('#salesOrder tbody input[type="checkbox"].minimal').iCheck('uncheck');
+		});
+
+        $('#orderDate,#site').on('change', function () {
+            if ($('#orderDate').val() == new Date().format("yyyy-MM-dd") || $('#orderDate').val() == new Date().format("MM/dd/yyyy") || $('#orderDate').val() == new Date().format("MM-dd-yyyy")) $('#divWechat').show();
+            else $('#divWechat').hide();
+            Order.clear();
+            $('#print').hide();
+            $('#deliver').hide();
+            $('#process').hide();
+
+            var s = $('#site').children('option:selected').val();
+
+            $('#needWork').val(s.substr(37, 10));
+
+            if ($('#needWork').val() == "") {
+                $('#optTobeWorked').hide();
+            } else if ($('#needWork').val() != ""){
+                $('#optTobeWorked').show();
+            }
+		});
+		$('#orderDate').datepicker({
+			autoclose: true,
+			format: '@(ViewBag.Language == "zh" ? "yyyy-mm-dd" : "mm/dd/yyyy")',
+			todayHighlight: true,
+			language: '@(ViewBag.Language == "zh" ? "zh-CN" : "")'
+		});
+        $('#print').hide();
+        $('#deliver').hide();
+        $('#process').hide();
+        $('#closews').hide();
+	});
+</script>

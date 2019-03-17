@@ -1,0 +1,175 @@
+﻿<div class="row">
+    <div class="col-xs-12">
+        <div class="box">
+            <div class="box-body">
+                <div class="col-sm-12 form-horizontal">
+                    <div class="form-group">
+                        <div class="col-sm-2">
+                            <button class="btn btn-primary ladda-button" data-style="zoom-out" onclick="WeChatRptJob.edit(this)">
+                                <i class="glyphicon glyphicon-plus"></i> @ViewBag.LabelNew
+                            </button>
+                        </div>
+                        <div class="col-sm-2">
+                            <select class="form-control" id="jobStatus">
+                                <option value="1">@ViewBag.LabelStatusActive</option>
+                                <option value="0">@ViewBag.LabelStatusBlock</option>
+                            </select>
+                        </div>
+                        <div class="col-sm-3 input-group">
+                            <input type="text" id="searchKey" placeholder="@ViewBag.LabelSearchHint" class="form-control">
+                            <span class="input-group-btn">
+                                <button type="button" class="btn btn-primary" id="searchBtn" onclick="WeChatRptJob.search()">@ViewBag.LabelSearch</button>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <table id="weChatRptJob" class="table table-striped table-bordered dataTable">
+                    <thead>
+                        <tr>
+                            <th>@ViewBag.LabelDescription</th>
+                            <th>@ViewBag.LabelMainQuery</th>
+                            <th>@ViewBag.LabelKeyWords</th>
+                            <th>@ViewBag.LabelParameter</th>
+                            <th>@ViewBag.LabelRunWeek</th>
+                            <th>@ViewBag.LabelDailyStartTime</th>
+                            <th>@ViewBag.LabelEdit</th>
+                            <th>@ViewBag.LabelRun</th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    $(function () {
+        $('#searchKey').on('keydown', function (event) {
+            if (event.keyCode === 13) $('#searchBtn').click();
+        }).focus();
+    });
+    var WeChatRptJob = {
+        tbl: null,
+        search: function () {
+            if (WeChatRptJob.tbl === null) {
+                WeChatRptJob.tbl = $('#weChatRptJob').DataTable({
+                    searching: false,
+                    lengthMenu: [[10, 15, 30, -1], [10, 15, 30, "ALL"]],
+                    dom: 'rt<"bottom"iflp<"clear">>',
+                    processing: true,
+                    stateSave: false,
+                    deferRender: true,
+                    language: {
+                        "processing": "@ViewBag.LabelLoading",
+                        "zeroRecords": "@ViewBag.LabelNoData",
+                        "lengthMenu": "@ViewBag.LabelLengthMenu",
+                        "info": "@ViewBag.LabelTableInfo",
+                        "infoEmpty": "@ViewBag.LabelTableInfoEmpty",
+                        "paginate": {
+                            "first": "@ViewBag.LabelFirstPage",
+                            "previous": "@ViewBag.LabelPreviousPage",
+                            "next": "@ViewBag.LabelNextPage",
+                            "last": "@ViewBag.LabelLastPage"
+                        }
+                    },
+                    ajax: {
+                        "url": '@Url.Content("~/api/SEMIApi/GetTableWeChatReportJobMastDatas/" + ViewBag.Language)',
+                        "type": "POST",
+                        "data": function (d) {
+                            d.Status = $('#jobStatus').children('option:selected').val(),
+                            d.KeyWords = $('#searchKey').val()
+                        }
+                    },
+                    columns: [
+                        { data: "JobName" },
+                        { data: "SQLName" },
+                        { data: "KeyFields" },
+                        { data: "ParameterFields" },
+                        {
+                            data: "RunWeek",
+                            render: function (data, type, row, meta) {
+                                switch (data) {
+                                    case 0: return '@ViewBag.LabelEveryday'; break;
+                                    case 1: return '@ViewBag.LabelMonday'; break;
+                                    case 2: return '@ViewBag.LabelTuesday'; break;
+                                    case 3: return '@ViewBag.LabelWensday'; break;
+                                    case 4: return '@ViewBag.LabelThursday'; break;
+                                    case 5: return '@ViewBag.LabelFriday'; break;
+                                    case 6: return '@ViewBag.LabelSaturday'; break;
+                                    case 7: return '@ViewBag.LabelSunday'; break;
+                                    default: return '@ViewBag.LabelManual'; break;
+                                }
+                            }
+                        },
+                        { data: "DailyStartTime" }
+                    ],
+                    columnDefs: [{
+                        targets: 6,
+                        data: null,
+                        defaultContent: '<button class="btn btn-primary btn-xs ladda-button" action="edit" data-style="zoom-out">'
+                            + '<i class="fa fa-edit"></i></button>'
+                    },
+                    {
+                        targets: 7,
+                        data: null,
+                        defaultContent: '<button class="btn btn-warning btn-xs ladda-button" action="run" data-style="zoom-out">'
+                            + '<i class="fa fa-gear"></i></button>'
+                    }]
+                });
+                $('#weChatRptJob tbody').on('click', 'button', function () {
+                    var data = WeChatRptJob.tbl.row($(this).parents('tr')).data();
+                    if ($(this).attr('action') == 'edit') WeChatRptJob.edit($(this)[0], data);
+                    if ($(this).attr('action') == 'run') WeChatRptJob.run($(this)[0], data);
+                });
+            }
+            else WeChatRptJob.tbl.ajax.reload();
+        },
+        edit: function (o, data) {
+            if (action) return;
+            else {
+                action = true;
+                $('#commonModal').html('');
+            }
+            var l = Ladda.create(o);
+            l.start();
+            actionRequest.post({
+                url: '@Url.Content("~/SEMI/WeChatReportJobDetail/" + ViewBag.Language)',
+                postData: {
+                    ID: data === undefined || data === null ? '' : data.ID
+                },
+                dataType: 'html',
+                success: function (response) {
+                    $('#commonModal').html(response);
+                    $('#commonModal').modal('show');
+                },
+                complete: function (xHR) {
+                    action = false;
+                    l.stop();
+                }
+            });
+        },
+        run: function (o, data) {
+            if (action) return;
+            else {
+                action = true;
+                $('#commonModal').html('');
+            }
+            var l = Ladda.create(o);
+            l.start();
+            actionRequest.post({
+                url: '@Url.Content("~/SEMI/WeChatReportRunJob/" + ViewBag.Language)',
+                postData: {
+                    ID: data === undefined || data === null ? '' : data.ID
+                },
+                dataType: 'html',
+                success: function (response) {
+                    $('#commonModal').html(response);
+                    $('#commonModal').modal('show');
+                },
+                complete: function (xHR) {
+                    action = false;
+                    l.stop();
+                }
+            });
+        }
+    }
+</script>

@@ -1,0 +1,273 @@
+﻿@using Model.StallSales;
+@{
+    List<StallSalesEntity> stallentity = ViewBag.entitylist;
+}
+<div class="row" id="panel">
+    <div class="col-xs-12">
+        <div class="box">
+            <div class="box-body">
+                <div class="col-sm-12 form-horizontal">
+                    <div class="form-group">
+                        <label>@ViewBag.LabelSetColumn</label><br />
+                        <div id ="tblfilter">
+                            <input type="checkbox" id="stall" class="minimal" checked="checked" name="H.CounterNo,H.CounterName" resource="'' CounterNo,'' CounterName"/><label>@ViewBag.LabelCounter</label>&nbsp;
+                            <input type="checkbox" id="member" class="minimal" checked="checked" name="H.cardNo,H.mbName,H.TypeName" resource="'' cardNo,'' mbName,'' TypeName" /><label>@ViewBag.LabelConsumer</label>&nbsp;
+                            <input type="checkbox" id="product" class="minimal" checked="checked" name="H.pluno,H.foodname" resource="'' pluno,'' foodname" /><label>@ViewBag.LabelProduct</label>&nbsp;
+                            <input type="checkbox" id="year" class="minimal" checked="checked" name="H.Year" resource="'' Year" /><label>@ViewBag.LabelYear</label>&nbsp;
+                            <input type="checkbox" id="month" class="minimal" checked="checked" name="H.Month" resource="'' Month" /><label>@ViewBag.LabelMonth</label>&nbsp;
+                            <input type="checkbox" id="date" class="minimal" checked="checked" name="H.operDate" resource="'' operDate" /><label>@ViewBag.LabelDate</label>&nbsp;
+                            <input type="checkbox" id="time" class="minimal" checked="checked" name="H.Time" resource="'' Time" /><label>@ViewBag.LabelTime</label>&nbsp;
+                        </div>
+                            <input type="text" id="all" style="height:0px;width:0px;border:0px" />
+                            <input type="text" id="title" style="height:0px;width:0px;border:0px" />
+                        <br/>
+                        <div>
+                            <select id="stallentity">
+                                @foreach (StallSalesEntity entity in stallentity)
+                                {
+                                    <option value="@entity.CounterName">@Html.Raw(entity.CounterNo + " " + entity.CounterName)</option>
+                                }
+                            </select>
+                            &nbsp;&nbsp;
+                            <label>
+                                @ViewBag.LabelBusinessDate
+                            </label>
+                            <input type="text" id="startdate" @Html.Raw(ViewBag.Language == "zh" ? " value=\"" + DateTime.Now.AddMonths(-1).ToString("yyyy-MM-dd") + "\" placeholder=\"yyyy-mm-dd\"" : " value=\"" + DateTime.Now.AddMonths(-1).ToString("MM/dd/yyyy") + "\" placeholder=\"mm/dd/yyyy\"") />
+                            <label>-</label>
+                            <input type="text" id="enddate" @Html.Raw(ViewBag.Language == "zh" ? " value=\"" + DateTime.Now.ToString("yyyy-MM-dd") + "\" placeholder=\"yyyy-mm-dd\"" : " value=\"" + DateTime.Now.ToString("MM/dd/yyyy") + "\" placeholder=\"mm/dd/yyyy\"") />
+                            &nbsp;&nbsp;&nbsp;&nbsp;
+                            <label>
+                                @ViewBag.LabelKeyWords
+                            </label>
+                            <input type="text" id="searchKey" />
+                            &nbsp;&nbsp;
+                            <button type="button" class="btn btn-primary" id="searchBtn" onclick="MB.search()">
+                                @ViewBag.LabelSearch
+                            </button>
+                            &nbsp;&nbsp;
+                            <button class="btn btn-primary" data-style="zoom-out" onclick="MB.exports(this)">
+                                @ViewBag.LabelExport
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <table id="mb" class="table table-striped table-bordered dataTable" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>@ViewBag.LabelCounterNo</th>
+                            <th>@ViewBag.LabelCounterName</th>
+                            <th>@ViewBag.LabelCardNo</th>
+                            <th>@ViewBag.LabelmbName</th>
+                            <th>@ViewBag.LabelCardType</th>
+                            <th>@ViewBag.LabelProductCode</th>
+                            <th>@ViewBag.LabelProductName</th>
+                            <th>@ViewBag.LabelYear</th>
+                            <th>@ViewBag.LabelMonth</th>
+                            <th>@ViewBag.LabelDate</th>
+                            <th>@ViewBag.LabelTime</th>
+                            <th>@ViewBag.LabelSalesQty</th>
+                            <th>@ViewBag.LabelSalesAmt</th>
+                            <th>@ViewBag.LabelDiscountAmt</th>
+                            <th><input type="checkbox" id="parentck" class="minimal"></th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    $(function () {
+        $('#searchKey').on('keydown', function (event) {
+            if (event.keyCode === 13) $('#searchBtn').click();
+        }).focus();
+        $('#startdate,#enddate').datepicker({
+            autoclose: true,
+            format: '@(ViewBag.Language == "zh" ? "yyyy-mm-dd" : "mm/dd/yyyy")',
+            todayHighlight: true,
+            language: '@(ViewBag.Language == "zh" ? "zh-CN" : "")'
+        });
+        $('#parentck').iCheck({
+            checkboxClass: 'icheckbox_minimal-blue',
+            radioClass: 'iradio_minimal-blue',
+            checked: true
+        }).on('ifChecked', function () {
+            $('#mb tbody input[type="checkbox"].minimal').iCheck('check');
+        }).on('ifUnchecked', function () {
+            $('#mb tbody input[type="checkbox"].minimal').iCheck('uncheck');
+        });
+        $('#year,#month,#date,#time,#product,#member,#stall').iCheck({
+            checkboxClass: 'icheckbox_minimal-blue',
+            radioClass: 'iradio_minimal-blue',
+            checked: true
+        });
+        
+    });
+
+    var MB = {
+        tbl: null,
+        clear: function () {
+            MB.tbl.clear();
+            MB.tbl.draw();
+        },
+        
+        search: function () {
+            var all = "";
+            var ktitle = "";
+            var title = "";
+            var i = "";
+            var j = "";
+            var stitle = "";
+            $('#tblfilter input:checkbox:checked').each(function () {
+                ktitle += "," + $(this).attr('name');
+                i += $(this).attr('name');
+            });
+            $('#tblfilter input:checkbox:not(:checked)').each(function () {
+                stitle += "," + $(this).attr('resource');
+                j += $(this).attr('resource');
+            });
+            if (i != "" && j != "") var s = ","
+            else s = "";
+            title = ktitle.substring(1) + s + stitle.substring(1);
+            if (ktitle != "") ktitle = "group by " + ktitle.substring(1)
+            else ktitle = "";
+
+            if (title != "") var t = ","
+            else t = "";
+            all = title + t+"sum(H.saleQty) as saleQty,sum(H.saleAmt) as saleAmt,sum(H.DiscAmt) as DiscAmt";
+            
+            $("#all").val(all);
+            $("#title").val(ktitle);
+
+            if (MB.tbl == null) {
+                var url = $("#url").attr("name");
+                MB.tbl = $('#mb').DataTable({
+                    searching: false,
+                    lengthMenu: [[10, 15, 30, 500], [10, 15, 30, 500]],
+                    dom: 'rt<"bottom"iflp<"clear">>',
+                    processing: true,
+                    stateSave: false,
+                    deferRender: true,
+                    language: {
+                        "processing": "@ViewBag.LabelLoading",
+                        "zeroRecords": "@ViewBag.LabelNoData",
+                        "lengthMenu": "@ViewBag.LabelLengthMenu",
+                        "info": "@ViewBag.LabelTableInfo",
+                        "infoEmpty": "@ViewBag.LabelTableInfoEmpty",
+                        "paginate": {
+                            "first": "@ViewBag.LabelFirstPage",
+                            "previous": "@ViewBag.LabelPreviousPage",
+                            "next": "@ViewBag.LabelNextPage",
+                            "last": "@ViewBag.LabelLastPage"
+                        }
+                    },
+                    ajax: {
+                        "url": '@Url.Content("~/api/SEMIApi/GetKeyTableMastDatas/" + ViewBag.Language)',
+                        "type": "POST",
+                        "data": function (d) {
+                            d.StallEntity = $('#stallentity').val(),
+                            d.StartDate = $('#startdate').val(),
+                            d.EndDate = $('#enddate').val(),
+                            d.KeyWords = $('#searchKey').val(),
+                            d.Status = $('#stallentity').val(),
+                            d.All = $("#all").val();
+                            d.Title = $("#title").val();
+                        },
+                        "complete": function (d) {
+                            MB.tbl.columns(0).visible($('#stall').is(":checked"));
+                            MB.tbl.columns(1).visible($('#stall').is(":checked"));
+                            MB.tbl.columns(2).visible($('#member').is(":checked"));
+                            MB.tbl.columns(3).visible($('#member').is(":checked"));
+                            MB.tbl.columns(4).visible($('#member').is(":checked"));
+                            MB.tbl.columns(5).visible($('#product').is(":checked"));
+                            MB.tbl.columns(6).visible($('#product').is(":checked"));
+                            MB.tbl.columns(7).visible($('#year').is(":checked"));
+                            MB.tbl.columns(8).visible($('#month').is(":checked"));
+                            MB.tbl.columns(9).visible($('#date').is(":checked"));
+                            MB.tbl.columns(10).visible($('#time').is(":checked"));
+                        }
+                    },
+                    columns:
+                    [
+                       { data: "CounterNo" },
+                       { data: "CounterName" },
+                       { data: "cardNo" },
+                       { data: "mbName" },
+                       { data: "TypeName" },
+                       { data: "pluno" },
+                       { data: "foodname" },
+                       { data: "Year" },
+                       { data: "Month" },
+                       { data: "operDate" },
+                       { data: "Time" },
+                       { data: "saleQty" },
+                       { data: "saleAmt" },
+                       { data: "DiscAmt" },
+                    ],
+                    columnDefs: [
+                           {
+                               targets: 14,
+                               data: null,
+                               defaultContent: '<input type="checkbox" class="minimal">',
+                               orderable: false,
+                           }
+                    ]
+
+                }).on('draw.dt', function () {
+                    $('#mb tbody input[type="checkbox"].minimal').iCheck({
+                        checkboxClass: 'icheckbox_minimal-blue',
+                        radioClass: 'iradio_minimal-blue'
+                    }).iCheck('uncheck');
+                    $('#parentck').iCheck('uncheck');
+                });
+
+            }
+            else {
+                MB.tbl.ajax.reload();
+            }
+        },
+
+        exports: function (o) {
+            if (MB.tbl == null) {
+                $('#alertModal .modal-body').html('<p><strong>@ViewBag.LabelNoData</strong></p>');
+                $('#alertModal').modal('show');
+            }
+            else {
+                var tblData = {
+                    data: []
+                };
+                $('#mb tbody input[type="checkbox"].minimal').each(function () {
+                    if ($('#parentck').prop('checked') || $(this).prop('checked')) {
+                        var data = MB.tbl.row($(this).parents('tr')).data();
+                        tblData.data.push(data);
+
+                    }
+                });
+                if (tblData.data.length <= 0) {
+                    $('#alertModal .modal-body').html('<p><strong>@ViewBag.LabelNoChosedRecord</strong></p>');
+                    $('#alertModal').modal('show');
+                }
+                else {
+                    if (action) return;
+                    else action = true;
+                    var l = Ladda.create(o);
+                    l.start();
+                    actionRequest.post({
+                        url: '@Url.Content("~/api/SEMIApi/ExportMB/" + ViewBag.Language)',
+                        postData: tblData,
+                        success: function (response) {
+                            if (response != undefined && response != null && response != '') {
+                                var url = '@Url.Content("~/SEMI/DownloadExcelData/" + ViewBag.Language)' + '/?link=' + response;
+                                $([url]).multiDownload({ source: "server" });
+                            }
+                        },
+                        complete: function (xhr) {
+                            action = false;
+                            l.stop();
+                        }
+                    });
+                }
+            }
+        }
+    }
+</script>

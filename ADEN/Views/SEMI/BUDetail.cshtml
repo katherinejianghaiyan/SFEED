@@ -1,0 +1,153 @@
+﻿@using Model.BU;
+@{
+    BUMast buMast = ViewBag.BUMast;
+}
+<div class="modal-dialog modal-lg" id="BUDetail">
+    <div class="modal-content">
+        <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+            <h4 class="modal-title">@(buMast == null ? ViewBag.LabelNew : ViewBag.LabelEdit)</h4>
+        </div>
+        <div class="modal-body">
+            <div class="form-horizontal">
+                <input type="hidden" data-field="BUGuid" value="@(buMast == null ? "" : buMast.BUGuid)" />
+                <div class="form-group">
+                    <label for="code" class="col-sm-1 control-label">@ViewBag.LabelCode</label>
+                    <div class="col-sm-2">
+                        <input type="text" class="form-control" data-field="BUCode" id="code" @Html.Raw(buMast == null ? "" : " value=\"" + buMast.BUCode + "\"") data-required />
+                    </div>
+                    <label for="name" class="col-sm-1 control-label">@ViewBag.LabelDescription</label>
+                    <div class="col-sm-2">
+                        <input type="text" class="form-control" data-field="BUName" id="name" @Html.Raw(buMast == null ? "" : " value=\"" + buMast.BUName + "\"") data-required />
+                    </div>
+                    <label for="name" class="col-sm-2 control-label">@ViewBag.LabelEndTime</label>
+                    <div class="col-sm-2">
+                        <input type="text" class="form-control" data-field="EndTime" id="name" @Html.Raw(buMast == null ? "" : " value=\"" + buMast.EndTime + "\"") />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="wparent" class="col-sm-1 control-label">@ViewBag.LabelParent</label>
+                    <div class="col-sm-2">
+                        <input type="text" class="form-control" data-field="ParentGuid" data-value-alias="guid" id="wparent" @Html.Raw(buMast == null ? "" : " data-guid=\"" + buMast.ParentGuid + "\" value=\"" + buMast.ParentName + "\"") />
+                    </div>
+                    <label for="timeout" class="col-sm-1 control-label">@ViewBag.LabelTimeOut</label>
+                    <div class="col-sm-2">
+                        <input type="text" class="form-control" data-field="TimeOut" id="timeout" @Html.Raw(buMast == null ? "" : " value=\"" + buMast.TimeOut + "\"") data-required />
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">@ViewBag.LabelClose</button>
+            <button type="button" id="detailSave" class="btn btn-primary">@ViewBag.LabelSave</button>
+        </div>
+    </div>
+</div>
+<script>
+    $(function () {
+        $('#detailSave').on('click', function () {
+            var checked = true;
+            //检查所有input标签中data-required必选项值是否为空
+            $('#BUDetail input[data-required]').each(function () {
+                if ($.trim($(this).val()) == '') {
+                    $(this).parent('div').addClass('has-error');
+                    checked = false;
+                }
+            });
+            if (!checked) return;
+            var jsonBuilder = new StringBuilder();
+            $('#BUDetail input[data-field]').each(function () {
+                if (jsonBuilder.length() > 0) jsonBuilder.append(',');
+                jsonBuilder.append("\"" + $(this).attr('data-field') + "\":\"");
+                if ($(this).attr('data-value-alias') == undefined) jsonBuilder.append($.jsonCheck($(this).val()) + "\"");
+                else {
+                    var aliasVal = $(this).attr('data-' + $(this).attr('data-value-alias'));
+                    if (aliasVal == undefined) aliasVal = '';
+                    jsonBuilder.append($.jsonCheck(aliasVal) + "\"");
+                }
+            });
+            if (jsonBuilder.length() > 0) {
+                jsonBuilder.append("}").insert(0, "{");
+                $('#BUDetail button').prop('disabled', true);
+                actionRequest.post({
+                    url: '@Url.Content("~/api/SEMIApi/EditBU/" + ViewBag.Language)',
+                    postData: $.parseJSON(jsonBuilder.toString()),
+                    success: function (response) {
+                        if (response !== undefined && response !== null && response.Status == 'ok') {
+                            $('#commonModal').modal('hide');
+                            BU.search();
+                        }
+                        else {
+                            $('#BUDetail button').prop('disabled', false);
+                            $('#alertModal .modal-body').html('<p><strong>'
+                               + (response === undefined || response === null ? "Server error" : response.Msg) + '</strong></p>');
+                            $('#alertModal').modal('show');
+                        }
+                    },
+                    error: function (msg) {
+                        $('#alertModal .modal-body').html('<p><strong>' + msg + '</strong></p>');
+                        $('#alertModal').modal('show');
+                        $('#BUDetail button').prop('disabled', false);
+                    }
+                });
+            }
+        });
+        $("#BUDetail input[data-required]").attr('placeholder', '@ViewBag.LabelRequired').on('focus', function () {
+            $(this).parent('div').removeClass('has-error');
+        });
+        $("#timeout").inputmask("integer", { allowMinus: false });
+        var typeSource = null;
+        $('#wparent').typeahead({
+            source: function (query, process) {
+                if (typeSource == undefined || typeSource == null) {
+                    actionRequest.post({
+                        url: '@Url.Content("~/api/SEMIApi/GetBUMastDatas/" + ViewBag.Language)',
+                        postData: {
+                            BUGuid: '@Html.Raw(buMast == null? "":buMast.BUGuid)'
+                        },
+                        success: function (data) {
+                            typeSource = data;
+                            process(typeSource);
+                        }
+                    });
+                }
+                else process(typeSource);
+            },
+            autoSelect: true,
+            matcher: function (data) {
+                if (this.query == undefined || this.query == '') return false;
+                if (data.BUCode.toLocaleLowerCase().indexOf(this.query.toLocaleLowerCase()) > -1 ||
+                    data.BUName.toLocaleLowerCase().indexOf(this.query.toLocaleLowerCase()) > -1) return true;
+                else return false;
+            },
+            displayText: function (data) {
+                return data.BUGuid;
+            },
+            highlighter: function (text, data) {
+                return data.BUName;
+            },
+            updater: function (data) {
+                $('#wparent').val(data.BUName);
+                $('#wparent').attr('data-guid', data.BUGuid);
+                return data.BUName;
+            },
+            delay: 200
+        });
+        $('#wparent').change(function () {
+            var current = $('#wparent').typeahead("getActive");
+            if (current) {
+                if (current.BUName != $('#wparent').val()) {
+                    $('#wparent').val('');
+                    $('#wparent').attr('data-guid', '');
+                }
+            }
+            else {
+                $('#wparent').val('');
+                $('#wparent').attr('data-guid', '');
+            }
+        });
+    });
+</script>
+

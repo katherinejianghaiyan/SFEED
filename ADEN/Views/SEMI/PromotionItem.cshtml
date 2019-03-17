@@ -1,0 +1,230 @@
+﻿@using Model.Promotion;
+@{
+    List<PromotionItem> itemList = ViewBag.PromotionItemList;
+} 
+    <div class="modal-dialog" id="promotionItem">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title">@ViewBag.LabelEdit</h4>
+            </div>
+            <div class="modal-body">
+                <div class="form-horizontal">
+                    <input type="hidden" value="@ViewBag.PromotionGuid" id="pGuid" />
+                    <div class="form-group">
+                        <label for="code" class="col-xs-2 control-label">@ViewBag.LabelItem</label>
+                        <div class="col-xs-3">
+                            <input type="text" class="form-control" id="code" data-guid="" data-required />
+                        </div>
+                        <div class="col-xs-5">
+                            <input type="text" class="form-control" id="name" tabindex="-1" readonly />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="price" class="col-xs-2 control-label">@ViewBag.LabelPrice</label>
+                        <div class="col-xs-2">
+                            <input type="text" class="form-control" id="price" data-required />
+                        </div>
+                        <div class="col-sm-2">
+                            <button type="button" onclick="PromotionItem.addRow()" class="btn btn-success">@ViewBag.LabelAdd</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-12">
+                        <table id="itemList" class="table dataTable">
+                            <thead>
+                                <tr>
+                                    <th>@ViewBag.LabelCode</th>
+                                    <th>@ViewBag.LabelDescription</th>
+                                    <th>@ViewBag.LabelPrice</th>
+                                    <th></th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (itemList != null && itemList.Count > 0)
+                                {
+                                    foreach (PromotionItem item in itemList)
+                                    {
+                                        <tr>                                       
+                                            <td>@item.ItemCode</td>
+                                            <td>@item.ItemName</td>
+                                            <td>@item.Price</td>
+                                            <th></th>   
+                                            <th>@item.ID</th>                                   
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">@ViewBag.LabelClose</button>
+                <button type="button" onclick="PromotionItem.save()" class="btn btn-primary">@ViewBag.LabelSave</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        var PromotionItem = {
+            tbl: null,
+            addRow: function () {
+                if (PromotionItem.tbl === null) return;
+                if (!PromotionItem.checkInput()) return;
+                var itemGuid = $('#code').attr('data-guid');
+                if (itemGuid === undefined || itemGuid === null || itemGuid === '') return;
+                var itemCode = $('#code').val();
+                if (PromotionItem.checkItem(itemCode)) {
+                    PromotionItem.tbl.row.add([
+                        itemCode,
+                        $('#name').val(),
+                        $('#price').val(),
+                        itemGuid,
+                        0
+                    ]).draw();
+                }
+                else {
+                    $('#alertModal .modal-body').html('<p><strong>Double Item!</strong></p>');
+                    $('#alertModal').modal('show');
+                }
+            },
+            checkItem: function (itemCode) {
+                if (PromotionItem.tbl.column(0).data().indexOf(itemCode) < 0) return true;
+                else return false;
+            },
+            checkInput: function () {
+                var checked = true;
+                $('#promotionItem div.form-horizontal input[data-required]').each(function () {
+                    if ($(this).val() == '') {
+                        $(this).parent('div').addClass('has-error');
+                        checked = false;
+                    }
+                });
+                return checked;
+            },
+            save: function () {
+                if (PromotionItem.tbl === null) return;
+                var jsonBuilder = new StringBuilder();
+                $('#promotionItem tbody input[data-row]').each(function () {
+                    var rdata = PromotionItem.tbl.row($(this).parents('tr')).data();
+                    if (jsonBuilder.length() > 0) jsonBuilder.append(',');
+                    jsonBuilder.append('{"ID":"' + rdata[4] + '","PromotionGuid":"' + $('#pGuid').val() + '","ItemGuid":"' + rdata[3] + '","Price":"' 
+                        + $(this).val() + '"}');
+                });
+                if (jsonBuilder.length() > 0) {
+                    jsonBuilder.insert(0, '{"data":[').append(']}');
+                    $('#promotionItem button').prop('disabled', true);
+                    actionRequest.post({
+                        url: '@Url.Content("~/api/SEMIApi/EditPromotionItem/" + ViewBag.Language)',
+                        postData: $.parseJSON(jsonBuilder.toString()),
+                        success: function (response) {
+                            if (response !== undefined && response !== null && response.Status == 'ok') {
+                                $('#commonModal').modal('hide');
+                            }
+                            else {
+                                $('#promotionItem button').prop('disabled', false);
+                                $('#alertModal .modal-body').html('<p><strong>'
+                                   + (response === undefined || response === null ? "Server error" : response.Msg) + '</strong></p>');
+                                $('#alertModal').modal('show');
+                            }
+                        },
+                        error: function (msg) {
+                            $('#alertModal .modal-body').html('<p><strong>' + msg + '</strong></p>');
+                            $('#alertModal').modal('show');
+                            $('#promotionItem button').prop('disabled', false);
+                        }
+                    });
+                }
+            }
+        };
+        $(function () {
+            $('#price').inputmask("decimal", { allowMinus: false, digits: 2 });
+            $('#promotionItem div.form-horizontal input[data-required]').on('focus', function () {
+                $(this).parent('div').removeClass('has-error');
+            });
+            PromotionItem.tbl = $('#itemList').DataTable({
+                searching: false,
+                ordering: false,
+                paging: false,
+                info: false,
+                lengthChange: false,
+                processing: false,
+                stateSave: false,
+                deferRender: true,
+                language: {
+                    "zeroRecords": "@ViewBag.LabelNoData"
+                },
+                columnDefs: [{
+                    targets: 2,
+                    render: function (data, type, row, meta) {
+                        return '<input type="text" data-row data-required class="col-xs-4" value="' + data + '" />';
+                    }
+                }, {
+                    targets: [3,4],
+                    visible: false
+                }],
+                createdRow: function (row, data, dataIndex) {
+                    $(row).find('input[data-required]').inputmask("decimal", { allowMinus: false, digits: 2 });
+                }
+            }).on('mouseover', 'tbody tr', function () {
+                $(PromotionItem.tbl.row(this).nodes()).addClass('highlight');
+            }).on('mouseleave', 'tbody tr', function () {
+                $(PromotionItem.tbl.row(this).nodes()).removeClass('highlight');
+            });
+            var typeSource = null;
+            $('#code').typeahead({
+                source: function (query, process) {
+                    if (typeSource == undefined || typeSource == null) {
+                        actionRequest.post({
+                            url: '@Url.Content("~/api/SEMIApi/GetFGDatas/" + ViewBag.Language)',
+                            postData: {
+                                Status: 1
+                            },
+                            success: function (data) {
+                                typeSource = data;
+                                process(typeSource);
+                            }
+                        });
+                    }
+                    else process(typeSource);
+                },
+                autoSelect: true,
+                matcher: function (item) {
+                    if (this.query == undefined || this.query == '') return false;
+                    if (item.ItemCode.toLocaleLowerCase().indexOf(this.query.toLocaleLowerCase()) > -1
+                        || item.ItemName.toLocaleLowerCase().indexOf(this.query.toLocaleLowerCase()) > -1)
+                        return true;
+                    else return false;
+                },
+                displayText: function (item) {
+                    return item.ItemGuid;
+                },
+                highlighter: function (text, item) {
+                    return item.ItemName;
+                },
+                updater: function (item) {
+                    $('#name').val(item.ItemName);
+                    $('#code').attr('data-guid', item.ItemGuid);
+                    return item.ItemCode;
+                },
+                delay: 200
+            });
+            $('#code').change(function () {
+                var current = $('#code').typeahead("getActive");
+                if (current) {
+                    if (current.ItemCode != $('#code').val()) {
+                        $('#code,#name').val('');
+                        $('#code').attr('data-guid', '');
+                    }
+                }
+                else {
+                    $('#code,#name').val('');
+                    $('#code').attr('data-guid', '');
+                }
+            });
+        });
+    </script>

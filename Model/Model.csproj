@@ -1,0 +1,128 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{346C43BA-58FA-4831-B42E-4FA38F20B87F}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Model</RootNamespace>
+    <AssemblyName>Model</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.ServiceModel" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Account\LoginResponse.cs" />
+    <Compile Include="Account\LoginUser.cs" />
+    <Compile Include="Account\LoginUserMast.cs" />
+    <Compile Include="Account\SiteUser.cs" />
+    <Compile Include="BOM\BOMDetail.cs" />
+    <Compile Include="BOM\BOMMast.cs" />
+    <Compile Include="BU\BUMast.cs" />
+    <Compile Include="Calendar\CalendarMast.cs" />
+    <Compile Include="CustomerData\CustomerDataLog.cs" />
+    <Compile Include="CustomerData\CustomerDataMast.cs" />
+    <Compile Include="Common\BaseRequest.cs" />
+    <Compile Include="Common\BaseResponse.cs" />
+    <Compile Include="Common\ErrorMast.cs" />
+    <Compile Include="Dict\DictGroup.cs" />
+    <Compile Include="Dict\DictDetail.cs" />
+    <Compile Include="Interface\ISchduleTask.cs" />
+    <Compile Include="Interface\ISEMIService.cs" />
+    <Compile Include="Item\FG\FGCostPriceRequest.cs" />
+    <Compile Include="Item\FG\FGMast.cs" />
+    <Compile Include="Item\FG\FGCostPrice.cs" />
+    <Compile Include="Item\FG\FGPrice.cs" />
+    <Compile Include="Item\ItemClass.cs" />
+    <Compile Include="Item\ItemMast.cs" />
+    <Compile Include="Item\ItemPrice.cs" />
+    <Compile Include="Item\ItemPriceRequest.cs" />
+    <Compile Include="MBSales\MBCardType.cs" />
+    <Compile Include="MBSales\MBInfoMast.cs" />
+    <Compile Include="MBSales\MBInfoRequest.cs" />
+    <Compile Include="MBSales\MBSalesMast.cs" />
+    <Compile Include="MBSales\MBSalesRequest.cs" />
+    <Compile Include="Promotion\PromotionItem.cs" />
+    <Compile Include="Promotion\PromotionMast.cs" />
+    <Compile Include="Item\RM\RMPrice.cs" />
+    <Compile Include="Item\ItemPropery.cs" />
+    <Compile Include="Item\ItemRequest.cs" />
+    <Compile Include="Item\RM\RMMast.cs" />
+    <Compile Include="Menu\MenuMast.cs" />
+    <Compile Include="MRP\MRPOrder.cs" />
+    <Compile Include="MRP\MRPOrderItem.cs" />
+    <Compile Include="MRP\MRPRequest.cs" />
+    <Compile Include="MRP\MRPSODetail.cs" />
+    <Compile Include="Order\OrderRequest.cs" />
+    <Compile Include="Order\PurchaseOrder.cs" />
+    <Compile Include="Order\PurchaseOrderLine.cs" />
+    <Compile Include="Order\ReceiptMast.cs" />
+    <Compile Include="Order\ReceiptRequest.cs" />
+    <Compile Include="Order\SaleLine.cs" />
+    <Compile Include="Order\SaleOrder.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Site\SiteMast.cs" />
+    <Compile Include="SPD\LogEntity.cs" />
+    <Compile Include="SPD\SPDMast.cs" />
+    <Compile Include="SPD\SPDRequest.cs" />
+    <Compile Include="StallSales\StallSalesEntity.cs" />
+    <Compile Include="StallSales\StallSalesMast.cs" />
+    <Compile Include="StallSales\StallSalesRequest.cs" />
+    <Compile Include="Supplier\SupplierMast.cs" />
+    <Compile Include="Supplier\SupplierRequest.cs" />
+    <Compile Include="Supplier\SupplierSite.cs" />
+    <Compile Include="Table\TableData.cs" />
+    <Compile Include="Table\TableMast.cs" />
+    <Compile Include="Type\TypeMast.cs" />
+    <Compile Include="UOM\UOMMast.cs" />
+    <Compile Include="Upload\UploadFileName.cs" />
+    <Compile Include="Upload\UploadResponse.cs" />
+    <Compile Include="Upload\UploadType.cs" />
+    <Compile Include="WeChatSqlMessage\WeChatReportDisplayData.cs" />
+    <Compile Include="WeChatSqlMessage\WeChatReportUser.cs" />
+    <Compile Include="WeChatSqlMessage\WeChatSqlMessageData.cs" />
+    <Compile Include="WeChatSqlMessage\WeChatSqlMessageJob.cs" />
+    <Compile Include="WeChatSqlMessage\WeChatSqlMessageJobDetail.cs" />
+    <Compile Include="WeChatSqlMessage\WeChatSqlMessageJobLog.cs" />
+    <Compile Include="WeChatSqlMessage\WeChatSqlMessageJobRun.cs" />
+    <Compile Include="WeChatSqlMessage\WeChatSqlRequest.cs" />
+    <Compile Include="WechatUser\WechatMenuList.cs" />
+  </ItemGroup>
+  <ItemGroup />
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

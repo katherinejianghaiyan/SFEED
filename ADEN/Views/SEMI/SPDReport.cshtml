@@ -1,0 +1,337 @@
+﻿@using Model.SPD;
+@{
+    List<LogEntity> UserKey = ViewBag.UserKey;
+}
+@using Model.Site
+@{
+    List<SiteMast> GetSite = ViewBag.GetSite;
+}
+
+<div class="row" id="panel">
+    <div class="col-lg-12">
+        <div class="box">
+            <div class="box-body">
+                <div class="col-sm-12 form-horizontal">
+                    <div class="form-group">
+                        <label>@ViewBag.LabelSetColumn</label>
+                        <input id="confirmfn" hidden />
+                        <div id="tblfilter">
+                            @if (ViewBag.fnVW == true)
+                            {
+                                <input type="checkbox" id="site" class="minimal" checked="checked" name="H.code" resource="'' code" /><label>@ViewBag.LabelSite</label><span>&nbsp;</span>
+                                <input type="checkbox" id="customer" class="minimal" checked="checked" name="H.Consumer" resource="'' Consumer" /><label>@ViewBag.LabelConsumer</label><span>&nbsp;</span>
+                                <input type="checkbox" id="product" class="minimal" checked="checked" name="H.ItemCode,H.ItemName" resource="'' ItemCode,'' ItemName" /><label>@ViewBag.LabelProduct</label><span>&nbsp;</span>
+                                <input type="checkbox" id="supplier" class="minimal" checked="checked" name="H.Supplier" resource="'' Supplier" /><label>@ViewBag.LabelSupplier</label><span>&nbsp;</span>
+                                <input type="checkbox" id="year" class="minimal" checked="checked" name="H.Year" resource="'' Year" /><label>@ViewBag.LabelYear</label><span>&nbsp;</span>
+                                <input type="checkbox" id="month" class="minimal" checked="checked" name="H.Month" resource="'' Month" /><label>@ViewBag.LabelMonth</label><span>&nbsp;</span>
+                                <input type="checkbox" id="date" class="minimal" checked="checked" name="H.Date" resource="'' Date" /><label>@ViewBag.LabelDate</label><span>&nbsp;</span>
+                            }
+                            @if (ViewBag.fnVW == false)
+                            {
+                                <input type="checkbox" id="site" class="minimal" checked="checked" name="H.code" resource="'' code" style="display:none"/><label hidden>@ViewBag.LabelSite</label><span>&nbsp;</span>
+                                <input type="checkbox" id="customer" class="minimal"  name="H.Consumer" resource="'' Consumer" style="display:none"/><label hidden>@ViewBag.LabelConsumer</label>
+                                <input type="checkbox" id="product" class="minimal" checked="checked" name="H.ItemCode,H.ItemName" resource="'' ItemCode,'' ItemName" style="display:none"/><label hidden>@ViewBag.LabelProduct</label><span>&nbsp;</span>
+                                <input type="checkbox" id="supplier" class="minimal" name="H.Supplier" resource="'' Supplier" style="display:none"/><label hidden>@ViewBag.LabelSupplier</label>
+                                <input type="checkbox" id="year" class="minimal" name="H.Year" resource="'' Year" style="display:none"/><label hidden>@ViewBag.LabelYear</label>
+                                <input type="checkbox" id="month" class="minimal" name="H.Month" resource="'' Month" style="display:none"/><label hidden>@ViewBag.LabelMonth</label>
+                                <input type="checkbox" id="date" class="minimal" checked="checked" name="H.Date" resource="'' Date" style="display:none"/><label hidden>@ViewBag.LabelDate</label><span>&nbsp;</span>
+                            }
+
+                            <select id="empCode" style="width:0px;height:0px;border:0px">
+                                @foreach (LogEntity log in UserKey)
+                                {
+                                    <option value="@log.empCode">@log.empCode</option>
+                                }
+                            </select>
+                            <input type="text" id="all" style="border:0px;height:0px;width:0px" />
+                            <input type="text" id="group" style="border:0px;height:0px;width:0px" />
+                        </div>
+                        <div>
+                            <select id="getsite">
+                                @foreach (SiteMast site in GetSite)
+                                {
+                                    <option value="@site.SiteCode">@Html.Raw(site.SiteName)</option>
+                                }
+                            </select>
+                            &nbsp;&nbsp;
+                            <label>@ViewBag.LabelBusinessDate</label>
+                            @if (ViewBag.fnVW == true)
+                            {
+                                <input type="text" id="startdate" @Html.Raw(ViewBag.Language == "zh" ? " value=\"" + DateTime.Now.AddMonths(-1).ToString("yyyy-MM-dd") + "\" placeholder=\"yyyy-mm-dd\"" : "value=\"" + DateTime.Now.AddMonths(-1).ToString("MM/dd/yyyy") + "\" placeholder=\"mm/dd/yyyy\"") />
+                            }
+                            @if (ViewBag.fnVW == false)
+                            {
+                                <input type="text" id="startdate" @Html.Raw(ViewBag.Language == "zh" ? " value=\"" + DateTime.Now.AddMonths(0).ToString("yyyy-MM-dd") + "\" placeholder=\"yyyy-mm-dd\"" : "value=\"" + DateTime.Now.AddMonths(-1).ToString("MM/dd/yyyy") + "\" placeholder=\"mm/dd/yyyy\"") />
+                            }
+
+                            <label>-</label>
+                            <input type="text" id="enddate" @Html.Raw(ViewBag.Language == "zh" ? " value=\"" + DateTime.Now.ToString("yyyy-MM-dd") + "\" placeholder=\"yyyy-mm-dd\"" : " value=\"" + DateTime.Now.ToString("MM/dd/yyyy") + "\" placeholder=\"mm/dd/yyyy\"") />
+                            &nbsp; &nbsp;
+                            <button type="button" class="btn btn-primary" id="searchBtn" onclick="SPD.search()">@ViewBag.LabelSearch</button>
+                            &nbsp; &nbsp;
+                            <button type="button" class="btn btn-primary" data-style="zoom-out" onclick="SPD.export(this)">
+                                @ViewBag.LabelExport
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <table id="spd" class="table table-striped table-bordered dataTable" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>@ViewBag.LabelSite</th>
+                            <th>@ViewBag.LabelYear</th>
+                            <th>@ViewBag.LabelMonth</th>
+                            <th>@ViewBag.LabelDate</th>
+                            <th>@ViewBag.LabelSupplier</th>
+                            <th>@ViewBag.LabelConsumer</th>
+                            <th>@ViewBag.LabelProductCode</th>
+                            <th>@ViewBag.LabelProductName</th>
+                            <th>@ViewBag.LabelSalesQty</th>
+                            <th id="th9">@ViewBag.LabelGrossAmt</th>
+                            <th id="th10">@ViewBag.LabelSalesAmt</th>
+                            <th id="th11">@ViewBag.LabelCost</th>
+                            <th id="th12">@ViewBag.LabelGrossMargin</th>
+                            <th id="th13">@ViewBag.LabelNetMargin</th>
+                            <th><input type="checkbox" id="parentck" class="minimal" /></th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+        var ajaxEdit = function () {
+        
+        actionRequest.post({
+            url: '@Url.Content("~/SEMI/ExportExcelSiteReport/" + ViewBag.Language)',
+            postData: { empCode: $('#empCode').val(), startdate: $('#startdate').val(), enddate: $('#enddate').val(), all: $('#all').val(), group: $('#group').val(), getsite: $('#getsite').val()  },
+
+            success: function (data) {
+                SPD.search();
+            },
+            error: function (msg) {
+             
+            },
+        });
+
+    };
+
+
+    $(function () {
+        $('#confirmfn').val('@ViewBag.fnVW')
+
+        $('#startdate,#enddate').datepicker({
+            autoclose: true,
+            format: '@(ViewBag.Language == "zh" ? "yyyy-mm-dd" : "mm/dd/yyyy")',
+            todayHighlight: true,
+            language: '@(ViewBag.Language == "zh" ? "zh-CN" : "")'
+        });
+      
+
+        if ($('#confirmfn').val() == 'True') {
+           $('#site,#customer,#product,#supplier,#year,#month,#date').iCheck({
+                checkboxClass: 'icheckbox_minimal-blue',
+                radioClass: 'iradio_minimal-blue',
+                checked: true
+            });
+        }
+
+        if ($('#confirmfn').val() == 'False') {
+            $('#th10').hide();
+            $('#th11').hide();
+            $('#th12').hide();
+            $('#th13').hide();
+        }
+
+        $('#parentck').iCheck({
+            checkboxClass: 'icheckbox_minimal-blue',
+            radioClass: 'iradio_minimal-blue',
+            checked: true
+        }).on('ifChecked', function () {
+                $('#spd tbody input[type="checkbox"].minimal').iCheck('check');
+            }).on('ifUnchecked', function () {
+                $('#spd tbody input[type="checkbox"].minimal').iCheck('uncheck');
+            })
+    });
+
+    var SPD = {
+            tbl: null,
+            clear: function () {
+                SPD.tbl.clear();
+                SPD.tbl.draw();
+            },
+            search: function () {
+
+                var title = "";
+                var subtitle = "";
+                var all = "";
+                var group = "";
+                $("#tblfilter input:checkbox:checked").each(function () {
+                    title +=","+$(this).attr("name");
+                });
+                title = title.substring(1);
+                $("#tblfilter input:checkbox:not(:checked)").each(function () {
+                    subtitle += "," + $(this).attr("resource");
+                });
+                if (title.length == 0) {
+                    all = subtitle.substring(1)+",sum(H.Qty) as Qty,sum(H.Turnover) as Turnover,sum(H.NetTurnover) as NetTurnover,sum(H.Cost) as Cost,sum(H.GM) as GM,sum(H.NetGM) as NetGM";
+                }
+                else if (title.length != 0) {
+                    all = title + subtitle +",sum(H.Qty) as Qty,sum(H.Turnover) as Turnover,sum(H.NetTurnover) as NetTurnover,sum(H.Cost) as Cost,sum(H.GM) as GM,sum(H.NetGM) as NetGM";
+                    group ="group by "+title;
+                }
+                $('#all').val(all);
+                $('#group').val(group);
+                if (SPD.tbl == null) {
+                    SPD.tbl = $("#spd").DataTable({
+                        searching: false,
+                        lengthMenu: [[10, 15, 30, 500], [10, 15, 30, 500]],
+                        dom: 'rt<"bottom"iflp<"clear">>',
+                        processing: true,
+                        stateSave: false,
+                        deferRender: true,
+                        language: {
+                            "processing": "@ViewBag.LabelLoading",
+                            "zeroRecords": "@ViewBag.LabelNoData",
+                            "lengthMenu": "@ViewBag.LabelLengthMenu",
+                            "info": "@ViewBag.LabelTableInfo",
+                            "infoEmpty": "@ViewBag.LabelTableInfoEmpty",
+                            "paginate": {
+                            "first": "@ViewBag.LabelFirstPage",
+                            "previous": "@ViewBag.LabelPreviousPage",
+                            "next": "@ViewBag.LabelNextPage",
+                            "last": "@ViewBag.LabelLastPage"
+                          }
+                        },
+                        ajax: {
+                            "url": '@Url.Content("~/api/SEMIApi/GetSPD/" + ViewBag.Language)',
+                            "type": "POST",
+                            "data": function (d) {
+                                    d.empCode = $('#empCode').val(),
+                                    d.startdate = $('#startdate').val(),
+                                    d.enddate = $('#enddate').val(),
+                                    d.all = $('#all').val(),
+                                    d.group = $('#group').val(),
+                                    d.getsite = $('#getsite').val();
+                            },
+                            "complete": function (d)
+                            {
+                                SPD.tbl.columns(0).visible($('#site').is(":checked"));
+                                SPD.tbl.columns(1).visible($('#year').is(":checked"));
+                                SPD.tbl.columns(2).visible($('#month').is(":checked"));
+                                SPD.tbl.columns(3).visible($('#date').is(":checked"));
+                                SPD.tbl.columns(4).visible($('#supplier').is(":checked"));
+                                SPD.tbl.columns(5).visible($('#customer').is(":checked"));
+                                SPD.tbl.columns(6).visible($('#product').is(":checked"));
+                                SPD.tbl.columns(7).visible($('#product').is(":checked"));
+                            }
+
+                        },
+                        columns: [
+                            { data: "code" },
+                            { data: "Year" },
+                            { data: "Month" },
+                            { data: "Date" },
+                            { data: "Supplier" },
+                            { data: "Consumer" },
+                            { data: "ItemCode" },
+                            { data: "ItemName" },
+                            { data: "Qty" },
+                            { data: "Turnover" },
+                            { data: "NetTurnover" },
+                            { data: "Cost" },
+                            { data: "GM" },
+                            { data: "NetGM" },
+                        ],
+                        columnDefs: [{
+                            targets: 14,
+                            data: null,
+                            defaultContent: '<input type="checkbox" class="minimal">',
+                            orderable: false
+                        }
+                        ]
+                    }).on('draw.dt', function () {
+                        $('#spd tbody input[type="checkbox"].minimal').iCheck({
+                            checkboxClass: 'icheckbox_minimal-blue',
+                            radioClass: 'iradio_minimal-blue',
+                        }).iCheck('uncheck');
+                        $('#parentck').iCheck('uncheck');
+                    });
+
+                }
+                else {
+                    SPD.tbl.ajax.reload();
+                }
+
+                if ($('#confirmfn').val() == 'False') {
+                        SPD.tbl.columns(10).visible(false);
+                        SPD.tbl.columns(11).visible(false);
+                        SPD.tbl.columns(12).visible(false);
+                        SPD.tbl.columns(13).visible(false);
+                }      
+            },
+            export: function (o){
+                if(SPD.tbl==null){
+                    $('#alertModal .modal-body').html('<p><strong>@ViewBag.LabelNoData</strong></p>');
+                    $('#alertModal').modal('show');
+                }
+                else {
+                    var tblData = {
+                        data: []
+                    };
+                    $('#spd tbody input[type="checkbox"].minimal').each(function () {
+                        if ($('#parentck').prop('checked') || $(this).prop('checked')) {
+                            var data = SPD.tbl.row($(this).parents('tr')).data();
+                            tblData.data.push(data);
+                        }
+                    });
+                    if (tblData.data.length <= 0) {
+                        $('#alertModal .modal-body').html('<p><strong>@ViewBag.LabelNoChosedRecord</strong></p>');
+                        $('#alertModal').modal('show');
+                    }
+                    else {
+                        if (action) return;
+                        else action = true;
+                        var l = Ladda.create(o);
+                        l.start();
+                        if ($('#confirmfn').val() == 'True') {
+                            actionRequest.post({
+                                url: '@Url.Content("~/api/SEMIApi/ExportSPD/" + ViewBag.Language)',
+                                postData: tblData,
+                                success: function (response) {
+                                    if (response != undefined && response != null && response != '') {
+                                        var url = '@Url.Content("~/SEMI/DownloadExcelData/" + ViewBag.Language)' + '/?link=' + response;
+                                        $([url]).multiDownload({ source: "server" });
+                                    }
+                                },
+                                complete: function (xhr) {
+                                    action = false;
+                                    l.stop();
+                                }
+                            });
+                        }
+                        else if ($('#confirmfn').val() == 'False') {
+                             actionRequest.post({
+                                 url: '@Url.Content("~/api/SEMIApi/ExportSiteSPD/" + ViewBag.Language)',
+                                 postData: tblData,
+                                 success: function (response) {
+                                     if (response != undefined && response != null && response != '') {
+                                         var url = '@Url.Content("~/SEMI/DownloadExcelData/" + ViewBag.Language)' + '/?link=' + response;
+                                         $([url]).multiDownload({ source: "server" });
+                                     }
+                                 },
+                                 complete: function (xhr) {
+                                     action = false;
+                                     l.stop();
+                                 }
+                             });
+
+                            //ajaxEdit();
+                        }
+
+                    }
+                }
+            }
+        }
+</script>

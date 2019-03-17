@@ -1,0 +1,390 @@
+﻿@using Model.BOM;
+@using Model.UOM;
+@if (ViewBag.Action == "CostView")
+{
+    BOMMast bom = ViewBag.BOM;
+
+    <div class="table-responsive">
+        <table class="table table-condensed">
+            <thead>
+                <tr class="active">
+                    <th>@ViewBag.LabelCode</th>
+                    <th>@ViewBag.LabelDescription</th>
+                    <th>@ViewBag.LabelDescription_EN</th>
+                    <th>@ViewBag.LabelUnit</th>
+                    <th>@ViewBag.LabelType</th>
+                    <th>@ViewBag.LabelActQty</th>
+                    <th>@ViewBag.LabelCurrentPrice</th>
+                    <th>@ViewBag.LabelLastPrice</th>
+                    <th>@ViewBag.LabelCurrentMaterialCost</th>
+                    <th>@ViewBag.LabelLastMaterialCost</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (bom != null && bom.Details != null && bom.Details.Count > 0)
+                {
+                    foreach (BOMDetail rm in bom.Details)
+                    {
+                        <tr class="success">
+                            <td>@rm.ItemCode</td>
+                            <td>@rm.ItemName_CN</td>
+                            <td>@rm.ItemName_EN</td>
+                            <td>@rm.UOMName</td>
+                            <td>@rm.ItemType</td>
+                            <td>@rm.ActualQty</td>
+                            <td>@rm.PreviousPrice</td>
+                            <td>@rm.Price</td>
+                            <td>@rm.PreviousActCost</td>
+                            <td>@rm.ActCost</td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+}
+else if (ViewBag.Action == "Edit")
+{
+    BOMMast bom = ViewBag.BOM;
+    List<UOMMast> uomList = ViewBag.UOMList;
+
+    <div class="modal-dialog modal-lg" id="bom">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title">@(ViewBag.LabelEdit + " - " + ViewBag.ProductCode + " / " + ViewBag.ProductName)</h4>
+            </div>
+            <div class="modal-body">
+                @if (ViewBag.Permission == "Full")
+                {
+                    <div class="form-horizontal">
+                        <input type="hidden" id="ProductGuid" value="@ViewBag.ProductGuid" />
+                        <div class="form-group">
+                            <label for="code" class="col-sm-1 control-label">@ViewBag.LabelItem</label>
+                            <div class="col-sm-2">
+                                <input type="text" class="form-control" id="code" data-guid="" data-required />
+                            </div>
+                            <div class="col-sm-3">
+                                <input type="text" class="form-control" id="name" tabindex="-1" readonly />
+                            </div>
+                            <label class="col-sm-2 control-label">@ViewBag.LabelDescription_EN</label>
+                            <div class="col-sm-3">
+                                <input type="text" class="form-control" id="name_en" readonly />
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="unit" class="col-sm-1 control-label">@ViewBag.LabelUnit</label>
+                            <div class="col-sm-2">
+                                <select class="form-control" id="unit">
+                                    @foreach (UOMMast uom in uomList)
+                                    {
+                                        <option value="@uom.UOMGuid">@uom.UOMName</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-sm-2">
+                                <input type="text" class="form-control" id="type" value="RM" readonly />
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="stdQty" class="col-sm-1 control-label">@ViewBag.LabelStdQty</label>
+                            <div class="col-sm-2">
+                                <input type="text" class="form-control" id="stdQty" data-required />
+                            </div>
+                            <label for="actQty" class="col-sm-1 control-label">@ViewBag.LabelActQty</label>
+                            <div class="col-sm-2">
+                                <input type="text" class="form-control" id="actQty" data-required />
+                            </div>
+                            <div class="col-sm-2">
+                                <button type="button" onclick="BOM.addRow()" class="btn btn-success">@ViewBag.LabelAdd</button>
+                            </div>
+                        </div>
+                    </div>
+                }
+                <div class="row">
+                    <div class="col-sm-12">
+                        <table id="itemList" class="table dataTable">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>BOMID</th>
+                                    <th>ItemGuid</th>
+                                    <th>@ViewBag.LabelCode</th>
+                                    <th>@ViewBag.LabelDescription</th>
+                                    <th>@ViewBag.LabelDescription_EN</th>
+                                    <th>UOMGuid</th>
+                                    <th>@ViewBag.LabelUnit</th>
+                                    <th>@ViewBag.LabelType</th>
+                                    <th>@ViewBag.LabelStdQty</th>
+                                    <th>@ViewBag.LabelActQty</th>
+
+
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (bom != null && bom.Details != null && bom.Details.Count > 0)
+                                {
+                                    foreach (BOMDetail detail in bom.Details)
+                                    {
+                                        <tr>
+                                            <td>@detail.Sort</td>
+                                            <td>@detail.BOMID</td>
+                                            <td></td>
+                                            <td>@detail.ItemCode</td>
+                                            <td>@detail.ItemName_CN</td>
+                                            <td>@detail.ItemName_EN</td>
+                                            <td></td>
+                                            <td>@detail.UOMName</td>
+                                            <td>@detail.ItemType</td>
+                                            <td>@detail.StdQty</td>
+                                            <td>@detail.ActualQty</td>
+
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">@ViewBag.LabelClose</button>
+                @if (ViewBag.Permission == "Full")
+                {
+                    <button type="button" onclick="BOM.save()" class="btn btn-primary">@ViewBag.LabelSave</button>
+                }
+            </div>
+        </div>
+    </div>
+    <script>
+        var BOM = {
+            tbl: null,
+            addRow: function () {
+                if (BOM.tbl === null) return;
+                if (!BOM.checkInput()) return;
+                var itemGuid = $('#code').attr('data-guid');
+                if (itemGuid === undefined || itemGuid === null || itemGuid === '') return;
+                var itemCode = $('#code').val();
+                var type
+                var len = BOM.tbl.data().length + 1;
+                if (BOM.checkItem(itemCode)) {
+                    BOM.tbl.row.add([
+                        len,
+                        0,
+                        itemGuid,
+                        itemCode,
+                        $('#name').val(),
+                        $('#name_en').val(),
+                        $('#unit').children('option:selected').val(),
+                        $('#unit').children('option:selected').text(),
+                        $('#type').val(),
+                        $('#stdQty').val(),
+                        $('#actQty').val()
+                    ]).draw();
+                }
+                else {
+                    $('#alertModal .modal-body').html('<p><strong>Double Item!</strong></p>');
+                    $('#alertModal').modal('show');
+                }
+            },
+            checkItem: function (itemCode) {
+                if (BOM.tbl.column(3).data().indexOf(itemCode) < 0) return true;
+                else return false;
+            },
+            checkInput: function () {
+                var checked = true;
+                $('#bom div.form-horizontal input[data-required]').each(function () {
+                    if ($(this).val() == '') {
+                        $(this).parent('div').addClass('has-error');
+                        checked = false;
+                    }
+                });
+                return checked;
+            },
+            save: function () {
+                if (BOM.tbl === null) return;
+                var jsonBuilder = new StringBuilder();
+                $('#itemList tbody input[data-row]').each(function () {
+                    var rdata = BOM.tbl.row($(this).parents('tr')).data();
+                    if (jsonBuilder.length() > 0) jsonBuilder.append(',');
+                    jsonBuilder.append('{"BOMID":"' + rdata[1] + '","ItemGuid":"' + rdata[2] + '","UOMGuid":"' + rdata[6]
+                        + '","StdQty":"' + $(this).val() + '","ActualQty":"'
+                        + $(this).parent('td').next('td').children('input[data-required]').val() + '"}');
+                });
+                if (jsonBuilder.length() > 0) {
+                    jsonBuilder.insert(0, '{"ProductGuid":"' + $('#ProductGuid').val() + '","Details":[').append(']}');
+                    
+                    $('#bom button').prop('disabled', true);
+                    actionRequest.post({
+                        url: '@Url.Content("~/api/SEMIApi/EditBOM/" + ViewBag.Language)',
+                        postData: $.parseJSON(jsonBuilder.toString()),
+                        success: function (response) {
+                            if (response !== undefined && response !== null && response.Status == 'ok') {
+                                $('#commonModal').modal('hide');
+                            }
+                            else {
+                                $('#bom button').prop('disabled', false);
+                                $('#alertModal .modal-body').html('<p><strong>'
+                                   + (response === undefined || response === null ? "Server error" : response.Msg) + '</strong></p>');
+                                $('#alertModal').modal('show');
+                            }
+                        },
+                        error: function (msg) {
+                            $('#alertModal .modal-body').html('<p><strong>' + msg + '</strong></p>');
+                            $('#alertModal').modal('show');
+                            $('#bom button').prop('disabled', false);
+                        }
+                    });
+                }
+            }
+        };
+        $(function () {
+            $('#stdQty,#actQty').inputmask("decimal", { allowMinus: false, digits: 3 });
+            $('#bom div.form-horizontal input[data-required]').on('focus', function () {
+                $(this).parent('div').removeClass('has-error');
+            });
+            BOM.tbl = $('#itemList').DataTable({
+                searching: false,
+                ordering: false,
+                paging: false,
+                info: false,
+                lengthChange: false,
+                processing: false,
+                stateSave: false,
+                deferRender: true,
+                language: {
+                    "zeroRecords": "@ViewBag.LabelNoData"
+                },
+                columnDefs: [{
+                    targets: 9,
+                    render: function (data, type, row, meta) {
+                        return '<input type="text" data-row data-required class="col-xs-4" value="' + data + '" />';
+                    }
+                },
+                {
+                    targets: 10,
+                    render: function (data, type, row, meta) {
+                        return '<input type="text" data-required class="col-xs-4" value="' + data + '" />';
+                    }
+                },
+                {
+                    targets: [1, 2, 6],
+                    visible: false
+                }],
+                createdRow: function (row, data, dataIndex) {
+                    $(row).find('input[data-required]').inputmask("decimal", { allowMinus: false, digits: 3 });
+                }
+            }).on('mouseover', 'tbody tr', function () {
+                $(BOM.tbl.row(this).nodes()).addClass('highlight');
+            }).on('mouseleave', 'tbody tr', function () {
+                $(BOM.tbl.row(this).nodes()).removeClass('highlight');
+            });
+            var typeSource = null;
+            $('#code').typeahead({
+                source: function (query, process) {
+                    if (typeSource == undefined || typeSource == null) {
+                        actionRequest.post({
+                            url: '@Url.Content("~/api/SEMIApi/GetRMDatas/" + ViewBag.Language)',
+                            postData: {
+                                Status: 1,
+                                Type: 'BOM'
+                            },
+                            success: function (data) {
+                                typeSource = data;
+                                process(typeSource);
+                            }
+                        });
+                    }
+                    else process(typeSource);
+                },
+                autoSelect: true,
+                matcher: function (item) {
+                    if (this.query == undefined || this.query == '') return false;
+                    if (item.ItemCode.toLocaleLowerCase().indexOf(this.query.toLocaleLowerCase()) > -1
+                        || (item.ItemName+item.ItemName_CN+item.ItemName_EN).toLocaleLowerCase().indexOf(this.query.toLocaleLowerCase()) > -1
+                        || item.ItemType.toLocaleLowerCase().indexOf(this.query.toLocaleLowerCase()) > -1)
+                        return true;
+                    else return false;
+                },
+                displayText: function (item) {
+                    return item.ItemGuid;
+                },
+                highlighter: function (text, item) {
+                    return item.ItemName_CN;
+                },
+                updater: function (item) {
+                    $('#name').val(item.ItemName_CN);
+                    $('#name_en').val(item.ItemName_EN);
+                    $('#type').val(item.ItemType);
+                    $('#code').attr('data-guid', item.ItemGuid);
+                    return item.ItemCode;
+                },
+                delay: 200
+            });
+            $('#code').change(function () {
+                var current = $('#code').typeahead("getActive");
+                if (current) {
+                    if (current.ItemCode != $('#code').val()) {
+                        $('#code,#name,#name_en').val('');
+                        $('#code').attr('data-guid', '');
+
+                    }
+                }
+                else {
+                    $('#code,#name,#name_en').val('');
+                    $('#code').attr('data-guid', '');
+                }
+            });
+        });
+    </script>
+}
+else if (ViewBag.Action == "BOMProduct")
+{
+    List<BOMDetail> details = ViewBag.Details;
+
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title">@ViewBag.LabelItem</h4>
+            </div>
+            <div class="modal-body">
+                <table class="table table-condensed">
+                    <thead>
+                        <tr>
+                            <th>@ViewBag.LabelCode</th>
+                            <th>@ViewBag.LabelDescription</th>
+                            <th>@ViewBag.LabelDescription_EN</th>
+                            <th>@ViewBag.LabelUnit</th>
+                            <th>@ViewBag.LabelStdQty</th>
+                            <th>@ViewBag.LabelActQty</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (details != null)
+                        {
+                            foreach (BOMDetail detail in details)
+                            {
+                                <tr>
+                                    <td>@detail.ItemCode</td>
+                                    <td>@detail.ItemName_CN</td>
+                                    <td>@detail.ItemName_EN</td>
+                                    <td>@detail.UOMName</td>
+                                    <td>@detail.StdQty</td>
+                                    <td>@detail.ActualQty</td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">@ViewBag.LabelClose</button>
+            </div>
+        </div>
+    </div>
+}

@@ -1,0 +1,215 @@
+﻿@using Model.Item;
+@using Model.UOM;
+@{
+    List<UOMMast> uomList = (List<UOMMast>)Model;
+    RMMast item = ViewBag.ItemMast;
+}
+<div class="modal-dialog modal-lg" id="RMDetail">
+    <div class="modal-content">
+        <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+            <h4 class="modal-title">@(item == null ? ViewBag.LabelNew : ViewBag.LabelEdit)</h4>
+        </div>
+        <div class="modal-body">
+            <div class="form-horizontal">
+                <input type="hidden" data-field="ItemGuid" value="@(item == null ? "" : item.ItemGuid)" />
+                <div class="form-group">
+                    <label for="code" class="col-sm-1 control-label">@ViewBag.LabelCode</label>
+                    <div class="col-sm-2">
+                        <input type="text" class="form-control" data-field="ItemCode" id="code" @Html.Raw(item == null ? "" : " value=\"" + item.ItemCode + "\"") data-required />
+                    </div>
+                    <label for="name" class="col-sm-1 control-label">@ViewBag.LabelDescription</label>
+                    <div class="col-sm-3">
+                        <input type="text" class="form-control" data-field="ItemName" id="name" @Html.Raw(item == null ? "" : " value=\"" + item.ItemName + "\"") data-required />
+                    </div>
+                    <label class="col-sm-1 control-label">@ViewBag.LabelDescription_EN</label>
+                    <div class="col-sm-3">
+                        <input type="text" class="form-control" data-field="ItemName_EN" id="name" @Html.Raw(item == null ? "" : " value=\"" + item.ItemName_EN + "\"") data-required />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="unit" class="col-sm-2 control-label">@ViewBag.LabelPurchaseUnit</label>
+                    <div class="col-sm-3">
+                        <select class="form-control" id="unit" data-field="ItemUnitGuid">
+                            @foreach (UOMMast uom in uomList)
+                            {
+                                <option value="@uom.UOMGuid" @Html.Raw(item == null ? "" : (uom.UOMGuid.Equals(item.ItemUnitGuid) ? " selected" : ""))>@uom.UOMName</option>
+                            }
+                        </select>
+                    </div>
+                    <label for="spec" class="col-sm-1 control-label">@ViewBag.LabelSpec</label>
+                    <div class="col-sm-3">
+                        <input type="text" class="form-control" data-field="ItemSpec" id="spec" @Html.Raw(item == null ? "" : " value=\"" + item.ItemSpec + "\"") />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="status" class="col-sm-2 control-label">@ViewBag.LabelStatus</label>
+                    <div class="col-sm-3">
+                        <select class="form-control" id="status" data-field="ItemStatus">
+                            <option value="1" @Html.Raw(item == null ? "" : (item.ItemStatus.Equals(1) ? " selected" : ""))>@ViewBag.LabelStatusActive</option>
+                            <option value="0" @Html.Raw(item == null ? "" : (item.ItemStatus.Equals(0) ? " selected" : ""))>@ViewBag.LabelStatusBlock</option>
+                        </select>
+                    </div>
+                    <label for="loss" class="col-sm-1 control-label">@ViewBag.LabelLoss</label>
+                    <div class="col-sm-2">
+                        <input type="text" class="form-control" data-field="ItemLoss" maxlength="5" id="loss" @Html.Raw(item == null ? "" : " value=\"" + item.ItemLoss + "\"") />
+                    </div>
+                    <label for="loss" class="col-sm-2 control-label">@ViewBag.LabelPurchasePolicy</label>
+                    <div class="col-sm-2">
+                        <select class="form-control" id="policy" data-field="PurchasePolicy">
+                            <option value="OnDemand" @Html.Raw(item == null ? "" : (item.PurchasePolicy.Equals("OnDemand") ? " selected" : ""))>@ViewBag.LabelOnDemand</option>
+                            <option value="NoPurchase" @Html.Raw(item == null ? "" : (item.PurchasePolicy.Equals("NoPurchase") ? " selected" : ""))>@ViewBag.LabelNoPurchase</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="classcode" class="col-sm-2 control-label">@ViewBag.LabelClassName</label>
+                    <div class="col-sm-3">
+                        <input type="text" class="form-control" data-field="ItemClassGuid" data-value-alias="guid" id="classCode" @Html.Raw(item == null ? "" : " data-guid=\"" + item.ItemClassGuid + "\" value=\"" + item.ItemClassCode + "\"") />
+                    </div>
+                    <div class="col-sm-5">
+                        <input type="text" class="form-control" tabindex="-1" id="className" @Html.Raw(item==null?"":" value=\"" + item.ItemClassName + "\"") readonly />
+                    </div>              
+                    <div class="col-sm-2">
+                        <label for="sell" class="control-label">@ViewBag.LabelSell</label>
+                        <input type="checkbox" class="minimal" data-field="ItemSell" id="sell" @Html.Raw(item == null ? "" : (item.ItemSell.Equals(1) ? " checked" : ""))>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">@ViewBag.LabelClose</button>
+            <button type="button" id="detailSave" class="btn btn-primary">@ViewBag.LabelSave</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(function () {
+        $('#detailSave').on('click', function () {
+            var checked = true;
+            //检查所有input标签中data-required必选项值是否为空
+            $('#RMDetail input[data-required]').each(function () {
+                if ($.trim($(this).val()) == '') {
+                    $(this).parent('div').addClass('has-error');
+                    checked = false;
+                }
+            });
+            if (!checked) return;
+            var jsonBuilder = new StringBuilder();
+            $('#RMDetail input[data-field]').each(function () {
+                if (jsonBuilder.length() > 0) jsonBuilder.append(',');
+                if ($(this).attr('type') == 'checkbox') {    
+                    jsonBuilder.append("\"" + $(this).attr('data-field') + "\":\"" + ($(this).prop('checked') ? "1" : "0") + "\"");
+                }
+                else {
+                    jsonBuilder.append("\"" + $(this).attr('data-field') + "\":\"");
+                    if ($(this).attr('data-value-alias') == undefined) jsonBuilder.append($.jsonCheck($(this).val()) + "\"");
+                    else {
+                        var aliasVal = $(this).attr('data-' + $(this).attr('data-value-alias'));
+                        if (aliasVal == undefined) aliasVal = '';
+                        jsonBuilder.append($.jsonCheck(aliasVal) + "\"");
+                    }
+                }
+            });
+            $('#RMDetail select[data-field]').each(function () {
+                if (jsonBuilder.length() > 0) jsonBuilder.append(',');
+                jsonBuilder.append("\"" + $(this).attr('data-field') + "\":\"" + $(this).children('option:selected').val() + "\"");
+            });
+            if (jsonBuilder.length() > 0) {
+                jsonBuilder.append(",\"ItemType\":\"@ViewBag.Type\"}").insert(0, "{");
+                $('#RMDetail button').prop('disabled', true);
+                actionRequest.post({
+                    url: '@Url.Content("~/api/SEMIApi/EditRM/" + ViewBag.Language)',
+                    postData:$.parseJSON(jsonBuilder.toString()),
+                    success: function (response) {
+                        if (response !== undefined && response !== null && response.Status == 'ok') {
+                            $('#searchKey').val(response.Msg);
+                            Item.search('@ViewBag.Type');
+                            $('#commonModal').modal('hide');
+                        }
+                        else {
+                            $('#RMDetail button').prop('disabled', false);
+                            $('#alertModal .modal-body').html('<p><strong>'
+                               + (response === undefined || response === null ? "Server error" : response.Msg) + '</strong></p>');
+                            $('#alertModal').modal('show');
+                        }
+                    },
+                    error: function (msg) {
+                        $('#alertModal .modal-body').html('<p><strong>' + msg + '</strong></p>');
+                        $('#alertModal').modal('show');
+                        $('#RMDetail button').prop('disabled', false);
+                    }
+                });
+            }
+        });
+
+        $("#RMDetail input[data-required]").attr('placeholder', '@ViewBag.LabelRequired').on('focus', function () {
+            $(this).parent('div').removeClass('has-error');
+        });
+
+        $('#RMDetail input[type="checkbox"].minimal').iCheck({
+            checkboxClass: 'icheckbox_minimal-blue',
+            radioClass: 'iradio_minimal-blue'
+        });
+
+        $("#loss").inputmask("integer", { allowMinus: false });
+
+        var typeSource = null;
+        $('#classCode').typeahead({
+            source: function (query, process) {
+                if (typeSource == undefined || typeSource == null) {
+                    actionRequest.post({
+                        url: '@Url.Content("~/api/SEMIApi/GetRMDatas/" + ViewBag.Language)',
+                        postData: {
+                            Status: 1,
+                            Type: 'RM'
+                        },
+                        success: function (data) {
+                            typeSource = data;
+                            process(typeSource);
+                        }
+                    });
+                }
+                else process(typeSource);
+            },
+            autoSelect: true,
+            matcher: function (item) {
+                if (this.query == undefined || this.query == '') return false;
+                if (item.ItemCode.toLocaleLowerCase().indexOf(this.query.toLocaleLowerCase()) > -1
+                    || item.ItemName.toLocaleLowerCase().indexOf(this.query.toLocaleLowerCase()) > -1)
+                    return true;
+                else return false;
+            },
+            displayText: function (item) {
+                return item.ItemGuid;
+            },
+            highlighter: function (text, item) {
+                return item.ItemName;
+            },
+            updater: function (item) {
+                $('#className').val(item.ItemName);
+                $('#classCode').attr('data-guid', item.ItemGuid);
+                return item.ItemCode;
+            },
+            delay: 200
+        });
+        $('#classCode').change(function () {
+            var current = $('#classCode').typeahead("getActive");
+            if (current) {
+                if (current.ItemCode != $('#classCode').val()) {
+                    $('#classCode').val('');
+                    $('#className').val('');
+                    $('#classCode').attr('data-guid', '');
+                }
+            }
+            else {
+                $('#classCode').val('');
+                $('#className').val('');
+                $('#classCode').attr('data-guid', '');
+            }
+        });
+    });
+</script>

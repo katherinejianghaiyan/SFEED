@@ -1,0 +1,63 @@
+﻿<div class="modal-dialog modal-xs">
+    <div class="modal-content">
+        <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+            <h4 class="modal-title">@ViewBag.LabelDataUpload</h4>
+        </div>
+        <div class="modal-body">
+            <input id="excelFile" type="file" class="file" accept=".xls,.xlsx" data-preview-file-type="text">
+            <div id="errorBlock" class="help-block"></div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-primary" id="demo">@ViewBag.LabelDemo</button>
+            <button type="button" class="btn btn-default" data-dismiss="modal">@ViewBag.LabelClose</button>
+        </div>
+    </div>
+</div>
+<script>
+    $(function () {
+        $('#demo').on('click', function () {
+            var link = '@Html.Raw(ViewBag.Demo)';
+            if (link != '') {
+                var url = '@Url.Content("~/SEMI/DownloadExcelData/" + ViewBag.Language)' + '/?link=' + link + "&demo=1";
+                $([url]).multiDownload({ source: "server" });
+            }
+        });
+        $("#excelFile").fileinput({
+            language: '@ViewBag.Language',
+            allowedFileExtensions: ['xlsx', 'xls'],
+            showUpload: true,
+            showPreview: false,
+            mainClass: 'input-group-sm',
+            layoutTemplates: {
+                main1: "{preview}\n" + "<div class=\'input-group {class}\'>\n" + "<div class=\'input-group-btn\'>\n"
+                    + "{browse}\n" + "{upload}\n" + "{remove}\n" + "</div>\n" + "{caption}\n" + "</div>"
+            },
+            elErrorContainer: "#errorBlock",
+            uploadUrl: '@Url.Content("~/api/SEMIApi/UploadExcelData/" + ViewBag.Language + "/?type=" + ViewBag.Type)',
+            uploadAsync: true
+        }).on("fileuploaded", function (event, data, previewId, index) {
+            if (data.response.Status === 'ok') {
+                var result = data.response.ResultUrl;
+                if (result != undefined && result != '') {
+                    var url = '@Url.Content("~/SEMI/DownloadExcelData/" + ViewBag.Language)' + '/?link=' + result;
+                    $([url]).multiDownload({ source: "server" });
+                }
+                else {
+                    var obj = @ViewBag.Obj;
+                    if(obj != undefined && obj != null) try{obj.search();}catch(e){}
+                }
+                $('#commonModal').modal('hide');
+            }
+            else {
+                $('#alertModal .modal-body').html('<p><strong>' + data.response.Msg + '</strong></p>');
+                $('#alertModal').modal('show');
+            }
+        }).on('fileerror', function (event, data, msg) {
+            $('#alertModal .modal-body').html('<p><strong>' + msg + '</strong></p>');
+            $('#alertModal').modal('show');
+        });
+    });
+</script>

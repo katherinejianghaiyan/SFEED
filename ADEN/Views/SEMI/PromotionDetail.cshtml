@@ -1,0 +1,102 @@
+﻿@using Model.Promotion;
+@{
+    PromotionMast data = ViewBag.PromotionMast;
+}
+<div class="modal-dialog modal-lg" id="promotionMast">
+    <div class="modal-content">
+        <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+            <h4 class="modal-title">@(data == null ? ViewBag.LabelNew : ViewBag.LabelEdit)</h4>
+        </div>
+        <div class="modal-body">
+            <div class="form-horizontal">        
+                <div class="form-group">
+                    <input type="hidden" data-field="ID" value="@(data == null? "":data.ID.ToString())" />
+                    <input type="hidden" data-field="BUGuid" value="@ViewBag.BUGuid" />
+                    <label for="sdate" class="col-sm-2 control-label">@ViewBag.LabelStartDate</label>
+                    <div class="col-sm-2">
+                        <input type="text" class="form-control" data-field="StartDate" id="sdate" @Html.Raw(data == null ? "" : " disabled value=\"" + data.StartDate + "\"") data-required />
+                    </div>
+                    <label for="edate" class="col-sm-2 control-label">@ViewBag.LabelEndDate</label>
+                    <div class="col-sm-2">
+                        <input type="text" class="form-control" data-field="EndDate" id="edate" @Html.Raw(data == null ? "" : " value=\"" + data.EndDate + "\"") />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="amt" class="col-sm-2 control-label">@ViewBag.LabelMinOrderAmt</label>
+                    <div class="col-sm-2">
+                        <input type="text" class="form-control" data-field="MinOrderAmt" id="amt" @Html.Raw(data == null ? "" : " disabled value=\"" + data.MinOrderAmt + "\"") data-required />
+                    </div>
+                    <label for="qty" class="col-sm-2 control-label">@ViewBag.LabelPromotionQty</label>
+                    <div class="col-sm-2">
+                        <input type="text" class="form-control" data-field="MaxQty" id="qty" @Html.Raw(data == null ? "" : " disabled value=\"" + data.MaxQty + "\"") data-required />
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">@ViewBag.LabelClose</button>
+            <button type="button" id="detailSave" class="btn btn-primary">@ViewBag.LabelSave</button>
+        </div>
+    </div>
+</div>
+<script>
+    $(function () {
+        $('#detailSave').on('click', function () {
+            var checked = true;
+            //检查所有input标签中data-required必选项值是否为空
+            $('#promotionMast input[data-required]').each(function () {
+                if ($.trim($(this).val()) == '') {
+                    $(this).parent('div').addClass('has-error');
+                    checked = false;
+                }
+            });
+            if (!checked) return;
+            var jBuilder = new StringBuilder();
+            $('#promotionMast input[data-field]').each(function () {
+                if (jBuilder.length() > 0) jBuilder.append(',');
+                jBuilder.append("\"" + $(this).attr('data-field') + "\":\"" + $.jsonCheck($(this).val()) + "\"");
+            });
+            if (jBuilder.length() > 0) {
+                jBuilder.append("}").insert(0, "{");
+                $('#promotionMast button').prop('disabled', true);
+                actionRequest.post({
+                    url: '@Url.Content("~/api/SEMIApi/EditPromotionMast/" + ViewBag.Language)',
+                    postData: $.parseJSON(jBuilder.toString()),
+                    success: function (response) {
+                        if (response !== undefined && response !== null && response.Status == 'ok') {
+                            Promotion.search();
+                            $('#commonModal').modal('hide');
+                        }
+                        else {
+                            $('#promotionMast button').prop('disabled', false);
+                            $('#alertModal .modal-body').html('<p><strong>'
+                               + (response === undefined || response === null ? "Server error" : response.Msg) + '</strong></p>');
+                            $('#alertModal').modal('show');
+                        }
+                    },
+                    error: function (msg) {
+                        $('#alertModal .modal-body').html('<p><strong>' + msg + '</strong></p>');
+                        $('#alertModal').modal('show');
+                        $('#promotionMast button').prop('disabled', false);
+                    }
+                });
+            }
+        });
+        $('#sdate,#edate').datepicker({
+            autoclose: true,
+            format: '@(ViewBag.Language == "zh" ? "yyyy-mm-dd" : "mm/dd/yyyy")',
+            todayHighlight: true,
+            language: '@(ViewBag.Language == "zh" ? "zh-CN" : "")',
+            startDate: '@ViewBag.SDate',
+            todayBtn: true
+        });
+        $("#promotionMast input[data-required]").attr('placeholder', '@ViewBag.LabelRequired').on('focus', function () {
+            $(this).parent('div').removeClass('has-error');
+        });
+        $("#amt").inputmask("decimal", { allowMinus: false, digits: 4 });
+        $('#qty').inputmask("integer", { allowMinus: false });
+    });
+</script>

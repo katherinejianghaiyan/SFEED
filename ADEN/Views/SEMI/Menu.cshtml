@@ -1,0 +1,25 @@
+﻿@functions{
+    private System.Text.StringBuilder SetMenu(List<Model.Menu.MenuMast> menuList, bool isRoot)
+    {
+        System.Text.StringBuilder stringBuilder = new System.Text.StringBuilder();
+        foreach(var menu in menuList)
+        {
+            if (menu.ChildMenus == null || menu.ChildMenus.Count == 0)
+							stringBuilder.Append("<li><a href=\"javascript:void(0)\" do=\"" + menu.MenuAction + "\"  permission=\"" + menu.MenuPermission + "\">"
+                    + "<i class=\"fa " + (string.IsNullOrWhiteSpace(menu.MenuIconClassName) ? "fa-circle-o" : menu.MenuIconClassName)
+                    + "\"></i><span>" + menu.MenuName + "</span></a></li>");
+            else
+            {
+                stringBuilder.Append("<li" + (isRoot ? " class=\"treeview\"" : "") + "><a href=\"javascript:void(0)\"><i class=\"fa "
+                    + (string.IsNullOrWhiteSpace(menu.MenuIconClassName) ? "fa-circle-o" : menu.MenuIconClassName) + "\">"
+                    + "</i><span>" + menu.MenuName + "</span><i class=\"fa fa-angle-left pull-right\"></i></a>"
+                    + "<ul class=\"treeview-menu\">");
+                stringBuilder.Append(SetMenu(menu.ChildMenus, false));
+                stringBuilder.Append("</ul></li>");
+            } 
+        }
+        return stringBuilder;
+    }
+} 
+
+@(new HtmlString(SetMenu((List<Model.Menu.MenuMast>)Model, true).ToString()))

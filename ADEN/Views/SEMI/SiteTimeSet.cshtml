@@ -1,0 +1,138 @@
+﻿@using Model.Site;
+@{
+    List<SiteMast> siteList = ViewBag.SiteList;
+}
+
+<div class="row">
+    <div class="col-xs-12">
+        <div class="box">
+            <div class="box-body">
+                <div class="col-sm-12 form-horizontal">
+                    <div class="form-group">
+                        <div class="col-sm-2">
+                            <button class="btn btn-primary ladda-button" data-style="zoom-out" onclick="Calendar.edit(this)">
+                                <i class="glyphicon glyphicon-plus"></i> @ViewBag.LabelNew
+                            </button>
+                        </div>
+
+                        <div class="col-sm-3 input-group">
+                            <!--<input type="text" id="searchKey" placeholder="@ViewBag.LabelSearchHint" class="form-control">-->
+                            <select id="searchKey" class="form-control">
+                                @foreach (SiteMast site in siteList)
+                                {
+                                    <option value="@site.SiteGuid">@Html.Raw(site.SiteCode + "/" + site.SiteName)</option>
+                                }
+                            </select>
+                            <span class="input-group-btn">
+                                <button type="button" class="btn btn-primary" id="searchBtn" onclick="Calendar.search()">@ViewBag.LabelSearch</button>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <table id="calendar" class="table table-striped table-bordered dataTable">
+                    <thead>
+                        <tr>
+                            <th>@ViewBag.LabelNameCn</th>
+                            <th>@ViewBag.LabelNameEn</th>
+                            <th>@ViewBag.LabelStartTime</th>
+                            <th>@ViewBag.LabelEndTime</th>
+                            <th>@ViewBag.LabelStatus</th>
+                            <th>@ViewBag.LabelEdit</th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    $(function () {
+        $('#searchKey').on('keydown', function (event) {
+            if (event.keyCode === 13) $('#searchBtn').click();
+        }).focus();
+    });
+    var Calendar = {
+        tbl: null,
+        search: function () {
+            if (Calendar.tbl === null) {
+                Calendar.tbl = $('#calendar').DataTable({
+                    searching: false,
+                    lengthMenu: [[10, 15, 30, -1], [10, 15, 30, "ALL"]],
+                    dom: 'rt<"bottom"iflp<"clear">>',
+                    processing: true,
+                    stateSave: false,
+                    deferRender: true,
+                    language: {
+                        "processing": "@ViewBag.LabelLoading",
+                        "zeroRecords": "@ViewBag.LabelNoData",
+                        "lengthMenu": "@ViewBag.LabelLengthMenu",
+                        "info": "@ViewBag.LabelTableInfo",
+                        "infoEmpty": "@ViewBag.LabelTableInfoEmpty",
+                        "paginate": {
+                            "first": "@ViewBag.LabelFirstPage",
+                            "previous": "@ViewBag.LabelPreviousPage",
+                            "next": "@ViewBag.LabelNextPage",
+                            "last": "@ViewBag.LabelLastPage"
+                        }
+                    },
+                    ajax: {
+                        "url": '@Url.Content("~/api/SEMIApi/GetTableSiteTimeSetMastDatas/" + ViewBag.Language)',
+                        "type": "POST",
+                        "data": function (d) {
+                            d.KeyWords = $('#searchKey').val()
+                        }
+                    },
+                    columns: [
+                        { data: "compNameCn" },
+                        { data: "compNameEn" },
+                        { data: "startTime" },
+                        { data: "endTime" },
+                        {
+                            data: "Working",
+                            render: function (data, type, row, meta) {
+                                return '<strong>' + (data == 0 ? '@ViewBag.LabelRest' : '@ViewBag.LabelWorking') + '</strong>';
+                            }
+                        }
+                    ],
+                    columnDefs: [{
+                        targets: 5,
+                        data: null,
+                        defaultContent: '<button class="btn btn-primary btn-xs ladda-button" data-style="zoom-out">'
+                            + '<i class="fa fa-edit"></i></button>'
+                    }]
+                });
+                $('#calendar tbody').on('click', 'button', function () {
+                    var data = Calendar.tbl.row($(this).parents('tr')).data();
+                    Calendar.edit($(this)[0], data);
+                });
+            }
+            else Calendar.tbl.ajax.reload();
+        },
+        edit: function (o, data) {
+            if (action) return;
+            else {
+                action = true;
+                $('#commonModal').html('');
+            }
+            var l = Ladda.create(o);
+            l.start();
+            actionRequest.post({
+                url: '@Url.Content("~/SEMI/SiteTimeSetDetail/" + ViewBag.Language)',
+                postData: {
+                    CalendarID: data === undefined || data === null ? '' : data.ID,
+                    SiteGUID: $('#searchKey').val()
+                },
+                dataType: 'html',
+                success: function (response) {
+                    $('#commonModal').html(response);
+                    $('#commonModal').modal('show');
+                },
+                complete: function (xHR) {
+                    action = false;
+                    l.stop();
+                }
+            });
+        }
+    }
+</script>
+

@@ -1,0 +1,145 @@
+﻿@using Model.BU;
+@{
+    List<BUMast> BUList = ViewBag.BUList;
+}
+<div class="row">
+    <div class="col-xs-12">
+        <div class="box">
+            <div class="box-body">
+                <div class="col-sm-12 form-horizontal">
+                    <div class="form-group">
+                        <div class="col-sm-2">
+                            <button class="btn btn-primary ladda-button" data-style="zoom-out" onclick="Site.edit(this)">
+                                <i class="glyphicon glyphicon-plus"></i> @ViewBag.LabelNew
+                            </button>
+                        </div>
+                        <div class="col-sm-2">
+                            <select class="form-control" id="BU">
+                                @foreach (var d in BUList)
+                                {
+                                    <option value="@d.BUGuid">@Html.Raw(d.BUCode + "-" + d.BUName)</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-sm-3 input-group">
+                            <input type="text" id="searchKey" placeholder="@ViewBag.LabelSearchHint" class="form-control">
+                            <span class="input-group-btn">
+                                <button type="button" class="btn btn-primary" id="searchBtn" onclick="Site.search()">@ViewBag.LabelSearch</button>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <table id="site" class="table table-striped table-bordered dataTable">
+                    <thead>
+                        <tr>
+                            <th>@ViewBag.LabelCode</th>
+                            <th>@ViewBag.LabelNameCn</th>
+                            <th>@ViewBag.LabelNameEn</th>
+                            <th>@ViewBag.LabelAddress</th>
+                            <th>@ViewBag.LabelTelNbr</th>
+                            <th>@ViewBag.LabelEdit</th>
+                            <th>QR Code</th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    $(function () {
+        $('#searchKey').on('keydown', function (event) {
+            if (event.keyCode === 13) $('#searchBtn').click();
+        }).focus();
+    });
+    var Site = {
+        tbl: null,
+        search: function () {
+            if (Site.tbl === null) {
+                Site.tbl = $('#site').DataTable({
+                    searching: false,
+                    lengthMenu: [[10, 15, 30, -1], [10, 15, 30, "ALL"]],
+                    dom: 'rt<"bottom"iflp<"clear">>',
+                    processing: true,
+                    stateSave: false,
+                    deferRender: true,
+                    language: {
+                        "processing": "@ViewBag.LabelLoading",
+                        "zeroRecords": "@ViewBag.LabelNoData",
+                        "lengthMenu": "@ViewBag.LabelLengthMenu",
+                        "info": "@ViewBag.LabelTableInfo",
+                        "infoEmpty": "@ViewBag.LabelTableInfoEmpty",
+                        "paginate": {
+                            "first": "@ViewBag.LabelFirstPage",
+                            "previous": "@ViewBag.LabelPreviousPage",
+                            "next": "@ViewBag.LabelNextPage",
+                            "last": "@ViewBag.LabelLastPage"
+                        }
+                    },
+                    ajax: {
+                        "url": '@Url.Content("~/api/SEMIApi/GetTableSiteMastDatas/" + ViewBag.Language)',
+                        "type": "POST",
+                        "data": function (d) {
+                            d.BUGuid = $('#BU').children('option:selected').val(),
+                            d.KeyWords = $('#searchKey').val()
+                        }
+                    },
+                    columns: [
+                        { data: "SiteCode" },
+                        { data: "NameCn" },
+                        { data: "NameEn" },
+                        { data: "Address" },
+                        { data: "TelNbr" }
+                    ],
+                    columnDefs: [{
+                        targets: 5,
+                        data: null,
+                        defaultContent: '<button class="btn btn-primary btn-xs ladda-button" action="edit" data-style="zoom-out">'
+                            + '<i class="fa fa-edit"></i></button>'
+                    },
+                    {
+                        targets: 6,
+                        data: null,
+                        defaultContent: '<button class="btn btn-warning btn-xs ladda-button" action="qrcode" data-style="zoom-out">'
+                            + '<i class="fa fa-qrcode"></i></button>'
+                    }]
+                });
+                $('#site tbody').on('click', 'button', function () {
+                    var data = Site.tbl.row($(this).parents('tr')).data();
+                    if ($(this).attr('action') == "edit") Site.edit($(this)[0], data);
+                    if ($(this).attr('action') == "qrcode") Site.qrcode($(this)[0], data);
+                });
+            }
+            else Site.tbl.ajax.reload();
+        },
+        edit: function (o, data) {
+            if (action) return;
+            else {
+                action = true;
+                $('#commonModal').html('');
+            }
+            var l = Ladda.create(o);
+            l.start();
+            actionRequest.post({
+                url: '@Url.Content("~/SEMI/SiteDetail/" + ViewBag.Language)',
+                postData: {
+                    SiteGuid: data === undefined || data === null ? '' : data.SiteGuid
+                },
+                dataType: 'html',
+                success: function (response) {
+                    $('#commonModal').html(response);
+                    $('#commonModal').modal('show');
+                },
+                complete: function (xHR) {
+                    action = false;
+                    l.stop();
+                }
+            });
+        },
+        qrcode: function (o, data) {
+            var features = "height=500px, width=500px, scrollbars=yes, resizable=yes";
+            window.open("http://mall.adenchina.net/jc/Barcode.aspx", "qrcode", features);
+        }
+    }
+</script>
+

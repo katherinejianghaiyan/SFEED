@@ -1,0 +1,136 @@
+﻿@using Model.Supplier;
+@{
+    SupplierMast supMast = ViewBag.SupplierMast;
+}
+<div class="modal-dialog modal-lg" id="SupplierDetail">
+    <div class="modal-content">
+        <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+            <h4 class="modal-title">@(supMast == null ? ViewBag.LabelNew : ViewBag.LabelEdit)</h4>
+        </div>
+        <div class="modal-body">
+            <div class="form-horizontal">
+                <input type="hidden" data-field="SupplierGuid" value="@(supMast == null ? "" : supMast.SupplierGuid)" />
+                <div class="form-group">
+                    <label for="code" class="col-sm-1 control-label">@ViewBag.LabelCode</label>
+                    <div class="col-sm-2">
+                        <input type="text" class="form-control" data-field="SupplierCode" id="code" @Html.Raw(supMast == null ? "" : " value=\"" + supMast.SupplierCode + "\"") data-required />
+                    </div>
+                    <label for="name1" class="col-sm-2 control-label">@ViewBag.LabelNameCn</label>
+                    <div class="col-sm-4">
+                        <input type="text" class="form-control" data-field="SupplierName" id="name1" @Html.Raw(supMast == null ? "" : " value=\"" + supMast.SupplierName + "\"") data-required />
+                    </div>
+                    <label for="status" class="col-sm-1 control-label">@ViewBag.LabelStatus</label>
+                    <div class="col-sm-2">
+                        <select class="form-control" id="status" data-field="Status">
+                            <option value="1" @Html.Raw(supMast == null ? "" : (supMast.Status.Equals(1) ? " selected" : ""))>@ViewBag.LabelStatusActive</option>
+                            <option value="0" @Html.Raw(supMast == null ? "" : (supMast.Status.Equals(0) ? " selected" : ""))>@ViewBag.LabelStatusBlock</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="contact" class="col-sm-1 control-label">@ViewBag.LabelContact</label>
+                    <div class="col-sm-2">
+                        <input type="text" class="form-control" data-field="ContactName" id="contact" @Html.Raw(supMast == null ? "" : " value=\"" + supMast.ContactName + "\"") />
+                    </div>
+                    <label for="name2" class="col-sm-2 control-label">@ViewBag.LabelNameEn</label>
+                    <div class="col-sm-4">
+                        <input type="text" class="form-control" data-field="SupplierNameEn" id="name2" @Html.Raw(supMast == null ? "" : " value=\"" + supMast.SupplierNameEn + "\"") data-required />
+                    </div>      
+                </div>
+                <div class="form-group">
+                    <label for="mobile" class="col-sm-1 control-label">@ViewBag.LabelMobileNbr</label>
+                    <div class="col-sm-3">
+                        <input type="text" class="form-control" data-field="MobileNbr" id="mobile" @Html.Raw(supMast == null ? "" : " value=\"" + supMast.MobileNbr + "\"") />
+                    </div>
+                    <label for="adr" class="col-sm-1 control-label">@ViewBag.LabelAddress</label>
+                    <div class="col-sm-7">
+                        <input type="text" class="form-control" data-field="Address" id="adr" @Html.Raw(supMast == null ? "" : " value=\"" + supMast.Address + "\"")  />
+                    </div>     
+                </div>
+                <div class="form-group">  
+                    <label for="tel" class="col-sm-1 control-label">@ViewBag.LabelTelNbr</label>
+                    <div class="col-sm-3">
+                        <input type="text" class="form-control" data-field="TelNbr" id="tel" @Html.Raw(supMast == null ? "" : " value=\"" + supMast.TelNbr + "\"") />
+                    </div>            
+                    <label for="email" class="col-sm-1 control-label">@ViewBag.LabelEmail</label>
+                    <div class="col-sm-4">
+                        <input type="email" class="form-control" data-field="EmailAddress" id="email" @Html.Raw(supMast == null ? "" : " value=\"" + supMast.EmailAddress + "\"") />
+                    </div>    
+                    <label for="postcode" class="col-sm-1 control-label">@ViewBag.LabelPostCode</label>
+                    <div class="col-sm-2">
+                        <input type="tel" class="form-control" data-field="PostCode" id="postcode" @Html.Raw(supMast == null ? "" : " value=\"" + supMast.PostCode + "\"") />
+                    </div>              
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">@ViewBag.LabelClose</button>
+            <button type="button" id="detailSave" class="btn btn-primary">@ViewBag.LabelSave</button>
+        </div>
+    </div>
+</div>
+<script>
+    $(function () {
+        $('#detailSave').on('click', function () {
+            var checked = true;
+            //检查所有input标签中data-required必选项值是否为空
+            $('#SupplierDetail input[data-required]').each(function () {
+                if ($.trim($(this).val()) == '') {
+                    $(this).parent('div').addClass('has-error');
+                    checked = false;
+                }
+            });
+            if (!checked) return;
+            var jsonBuilder = new StringBuilder();
+            $('#SupplierDetail input[data-field]').each(function () {
+                if (jsonBuilder.length() > 0) jsonBuilder.append(',');
+                jsonBuilder.append("\"" + $(this).attr('data-field') + "\":\"");
+                jsonBuilder.append($.jsonCheck($(this).val()) + "\"");
+            });
+            $('#SupplierDetail select[data-field]').each(function () {
+                if (jsonBuilder.length() > 0) jsonBuilder.append(',');
+                jsonBuilder.append("\"" + $(this).attr('data-field') + "\":\"" + $(this).children('option:selected').val() + "\"");
+            });
+            if (jsonBuilder.length() > 0) {
+                jsonBuilder.append("}").insert(0, "{");
+                $('#SupplierDetail button').prop('disabled', true);
+                actionRequest.post({
+                    url: '@Url.Content("~/api/SEMIApi/EditSupplier/" + ViewBag.Language)',
+                    postData: $.parseJSON(jsonBuilder.toString()),
+                    success: function (response) {
+                        if (response !== undefined && response !== null && response.Status == 'ok') {
+                            $('#searchKey').val(response.Msg);
+                            Supplier.search();
+                            $('#commonModal').modal('hide');
+                        }
+                        else {
+                            $('#SupplierDetail button').prop('disabled', false);
+                            $('#alertModal .modal-body').html('<p><strong>'
+                               + (response === undefined || response === null ? "Server error" : response.Msg) + '</strong></p>');
+                            $('#alertModal').modal('show');
+                        }
+                    },
+                    error: function (msg) {
+                        $('#alertModal .modal-body').html('<p><strong>' + msg + '</strong></p>');
+                        $('#alertModal').modal('show');
+                        $('#SupplierDetail button').prop('disabled', false);
+                    }
+                });
+            }
+        });
+        $("#SupplierDetail input[data-required]").attr('placeholder', '@ViewBag.LabelRequired').on('focus', function () {
+            $(this).parent('div').removeClass('has-error');
+        });
+        $('#mobile').inputmask({ mask: ["[(99)]99999999999"], greedy: false });
+        $('#tel').inputmask({ mask: ["999[9] 99999999 [9999]"] });
+        $('#postcode').inputmask({ mask: ["999999[99]"] });
+        $('#email').on('blur', function () {
+            var rep = new RegExp("[a-zA-Z0-9._%-]+@@[a-zA-Z0-9-]+\\.[a-zA-Z]{2,4}");
+            if (!rep.test($(this).val())) $(this).val('');
+        });
+    });
+</script>
+

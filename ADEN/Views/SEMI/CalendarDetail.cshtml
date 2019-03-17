@@ -1,0 +1,243 @@
+﻿@using Model.Calendar;
+@{
+    CalendarMast calendarMast = ViewBag.Calendar;
+}
+<div class="modal-dialog modal-lg" id="CalendarDetail">
+    <div class="modal-content">
+        <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+            <h4 class="modal-title">@(calendarMast == null ? ViewBag.LabelNew : ViewBag.LabelEdit)</h4>
+        </div>
+        <div class="modal-body">
+            <div class="form-horizontal">
+                <input type="hidden" data-field="ID" id="calendarID" value="@(calendarMast == null ? "" : calendarMast.ID.ToString())" />
+                <div class="form-group">
+                    <label for="name" class="col-sm-2 control-label">@ViewBag.LabelDescription</label>
+                    <div class="col-sm-2">
+                        <input type="text" class="form-control" data-field="Name" id="name" @Html.Raw(calendarMast == null ? "" : " value=\"" + calendarMast.Name + "\"") data-required />
+                    </div>
+                    <label for="working" class="col-sm-2 control-label">@ViewBag.LabelStatus</label>
+                    <div class="col-sm-2">
+                        <select class="form-control" data-field="Working" id="working">
+                            <option value="1" @Html.Raw(calendarMast == null ? "" : (calendarMast.Working.Equals(1) ? " selected" : ""))>@ViewBag.LabelWorking</option>
+                            <option value="0" @Html.Raw(calendarMast == null ? "" : (calendarMast.Working.Equals(0) ? " selected" : ""))>@ViewBag.LabelRest</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="sdate" class="col-sm-2 control-label">@ViewBag.LabelStartDate</label>
+                    <div class="col-sm-2">
+                        <input type="text" class="form-control" data-field="StartDate" id="sdate" @Html.Raw(calendarMast == null ? "" : " value=\"" + calendarMast.StartDate + "\"") data-required />
+                    </div>
+                    <label for="edate" class="col-sm-2 control-label">@ViewBag.LabelEndDate</label>
+                    <div class="col-sm-2">
+                        <input type="text" class="form-control" data-field="EndDate" id="edate" @Html.Raw(calendarMast == null ? "" : " value=\"" + calendarMast.EndDate + "\"") data-required />
+                    </div>
+                </div>
+                <!--<div class="form-group">
+                    <label for="stime" class="col-sm-2 control-label">@ViewBag.LabelStartTime</label>
+                    <div class="col-sm-2">
+                        <input type="text" class="form-control" data-field="startTime" id="stime" @Html.Raw(calendarMast == null ? "" : " value=\"" + calendarMast.startTime + "\"") data-required />
+                        <label>(e.g. 10:00)</label>
+                    </div>
+                    <label for="etime" class="col-sm-2 control-label">@ViewBag.LabelEndTime</label>
+                    <div class="col-sm-2">
+                        <input type="text" class="form-control" data-field="endTime" id="etime" @Html.Raw(calendarMast == null ? "" : " value=\"" + calendarMast.endTime + "\"") data-required />
+                        <label>(e.g. 17:30)</label>
+                    </div>
+                </div>-->
+                <div class="form-group">
+                    <label for="bu" class="col-sm-2 control-label">@ViewBag.LabelBranch</label>
+                    <div class="col-sm-2">
+                        <input type="text" class="form-control" data-field="BUGuid" data-value-alias="guid" id="bu" @Html.Raw(calendarMast == null ? "" : " data-guid=\"" + calendarMast.BUGuid + "\" value=\"" + calendarMast.BUName + "\"") />
+                    </div>
+                    <label for="site" class="col-sm-2 control-label">@ViewBag.LabelSite</label>
+                    <div class="col-sm-2">
+                        <input type="text" class="form-control" data-field="SiteGuid" data-value-alias="guid" id="site" @Html.Raw(calendarMast == null ? "" : " data-guid=\"" + calendarMast.SiteGuid + "\" value=\"" + calendarMast.SiteCode + "\"") />
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">@ViewBag.LabelClose</button>
+            @if (calendarMast != null && !calendarMast.ID.Equals(0))
+            {
+                <button type="button" id="detailDel" class="btn btn-danger">@ViewBag.LabelDelete</button>
+            }
+            <button type="button" id="detailSave" class="btn btn-primary">@ViewBag.LabelSave</button>
+        </div>
+    </div>
+</div>
+<script>
+    var ajaxEdit = function (json) {
+        $('#CalendarDetail button').prop('disabled', true);
+        actionRequest.post({
+            url: '@Url.Content("~/api/SEMIApi/EditCalendar/" + ViewBag.Language)',
+            postData: $.parseJSON(json),
+            success: function (response) {
+                if (response !== undefined && response !== null && response.Status == 'ok') {
+                    $('#commonModal').modal('hide');
+                    Calendar.search();
+                }
+                else {
+                    $('#CalendarDetail button').prop('disabled', false);
+                    $('#alertModal .modal-body').html('<p><strong>'
+                       + (response === undefined || response === null ? "Server error" : response.Msg) + '</strong></p>');
+                    $('#alertModal').modal('show');
+                }
+            },
+            error: function (msg) {
+                $('#alertModal .modal-body').html('<p><strong>' + msg + '</strong></p>');
+                $('#alertModal').modal('show');
+                $('#CalendarDetail button').prop('disabled', false);
+            }
+        });
+    };
+    $(function () {
+        $('#detailDel').on('click', function () {
+            ajaxEdit("{\"IsDel\":\"1\", \"ID\":\"" + $('#calendarID').val() + "\"}");
+        });
+        $('#detailSave').on('click', function () {
+            var checked = true;
+            //检查所有input标签中data-required必选项值是否为空
+            $('#CalendarDetail input[data-required]').each(function () {
+                if ($.trim($(this).val()) == '') {
+                    $(this).parent('div').addClass('has-error');
+                    checked = false;
+                }
+            });
+            if (!checked) return;
+            var jsonBuilder = new StringBuilder();
+            $('#CalendarDetail input[data-field]').each(function () {
+                if (jsonBuilder.length() > 0) jsonBuilder.append(',');
+                jsonBuilder.append("\"" + $(this).attr('data-field') + "\":\"");
+                if ($(this).attr('data-value-alias') == undefined) jsonBuilder.append($.jsonCheck($(this).val()) + "\"");
+                else {
+                    var aliasVal = $(this).attr('data-' + $(this).attr('data-value-alias'));
+                    if (aliasVal == undefined) aliasVal = '';
+                    jsonBuilder.append($.jsonCheck(aliasVal) + "\"");
+                }
+            });
+            $('#CalendarDetail select[data-field]').each(function () {
+                if (jsonBuilder.length() > 0) jsonBuilder.append(',');
+                jsonBuilder.append("\"" + $(this).attr('data-field') + "\":\"" + $(this).children('option:selected').val() + "\"");
+            });
+            if (jsonBuilder.length() > 0) {
+                jsonBuilder.append("}").insert(0, "{");
+                ajaxEdit(jsonBuilder.toString());
+            }
+        });
+        $("#CalendarDetail input[data-required]").attr('placeholder', '@ViewBag.LabelRequired').on('focus', function () {
+            $(this).parent('div').removeClass('has-error');
+        });
+        $('#sdate,#edate').datepicker({
+            autoclose: true,
+            format: '@(ViewBag.Language == "zh" ? "yyyy-mm-dd" : "mm/dd/yyyy")',
+            todayHighlight: true,
+            language: '@(ViewBag.Language == "zh" ? "zh-CN" : "")'
+        });
+
+        //$('#stime,#etime').timepicker();
+        
+        var typeSource1 = null;
+        var typeSource2 = null;
+        $('#bu').typeahead({
+            source: function (query, process) {
+                if (typeSource1 == undefined || typeSource1 == null) {
+                    actionRequest.post({
+                        url: '@Url.Content("~/api/SEMIApi/GetBUMastDatas/" + ViewBag.Language)',
+                        postData: {
+                            BUGuid: ''
+                        },
+                        success: function (data) {
+                            typeSource1 = data;
+                            process(typeSource1);
+                        }
+                    });
+                }
+                else process(typeSource1);
+            },
+            autoSelect: true,
+            matcher: function (data) {
+                if (this.query == undefined || this.query == '') return false;
+                if (data.BUCode.toLocaleLowerCase().indexOf(this.query.toLocaleLowerCase()) > -1 ||
+                    data.BUName.toLocaleLowerCase().indexOf(this.query.toLocaleLowerCase()) > -1) return true;
+                else return false;
+            },
+            displayText: function (data) {
+                return data.BUGuid;
+            },
+            highlighter: function (text, data) {
+                return data.BUName;
+            },
+            updater: function (data) {
+                $('#bu').val(data.BUName);
+                $('#bu').attr('data-guid', data.BUGuid);
+                return data.BUName;
+            },
+            delay: 200
+        });
+        $('#bu').change(function () {
+            var current = $('#bu').typeahead("getActive");
+            if (current) {
+                if (current.BUName != $('#bu').val()) {
+                    $('#bu').val('');
+                    $('#bu').attr('data-guid', '');
+                }
+            }
+            else {
+                $('#bu').val('');
+                $('#bu').attr('data-guid', '');
+            }
+        });
+        $('#site').typeahead({
+            source: function (query, process) {
+                if (typeSource2 == undefined || typeSource2 == null) {
+                    actionRequest.post({
+                        url: '@Url.Content("~/api/SEMIApi/GetSiteMastDatas/" + ViewBag.Language)',
+                        postData: { },
+                        success: function (data) {
+                            typeSource2 = data;
+                            process(typeSource2);
+                        }
+                    });
+                }
+                else process(typeSource2);
+            },
+            autoSelect: true,
+            matcher: function (data) {
+                if (this.query == undefined || this.query == '') return false;
+                if (data.SiteCode.toLocaleLowerCase().indexOf(this.query.toLocaleLowerCase()) > -1) return true;
+                else return false;
+            },
+            displayText: function (data) {
+                return data.SiteGuid;
+            },
+            highlighter: function (text, data) {
+                return data.SiteCode;
+            },
+            updater: function (data) {
+                $('#site').val(data.SiteCode);
+                $('#site').attr('data-guid', data.SiteGuid);
+                return data.SiteCode;
+            },
+            delay: 200
+        });
+        $('#site').change(function () {
+            var current = $('#site').typeahead("getActive");
+            if (current) {
+                if (current.SiteCode != $('#site').val()) {
+                    $('#site').val('');
+                    $('#site').attr('data-guid', '');
+                }
+            }
+            else {
+                $('#site').val('');
+                $('#site').attr('data-guid', '');
+            }
+        });
+    });
+</script>
+

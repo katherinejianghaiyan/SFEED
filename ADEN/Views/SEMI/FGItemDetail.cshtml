@@ -1,0 +1,275 @@
+﻿@using Model.Item;
+@using Model.Dict;
+@{
+    FGMast item = ViewBag.ItemMast;
+    List<ItemClass> itemClasses = ViewBag.ItemClasses;
+    List<DictGroup> itemDicts = (List<DictGroup>)Model;
+    List<DictDetail> itemDictDetails = null;
+    int i = 0;
+}
+<div class="modal-dialog modal-lg" id="FGDetail">
+    <div class="modal-content">
+        <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+            <h4 class="modal-title">@(item == null ? ViewBag.LabelNew : ViewBag.LabelEdit)</h4>
+        </div>
+        <div class="modal-body">
+            <div class="nav-tabs-custom">
+                <ul class="nav nav-tabs">
+                    <li class="active"><a href="#mastTab" data-toggle="tab">@ViewBag.LabelMastData</a></li>
+                    <li><a href="#tipsTab" data-toggle="tab">@ViewBag.LabelTips</a></li>
+                    <li><a href="#cookingTab" data-toggle="tab">@ViewBag.LabelCooking</a></li>
+                    <li><a href="#instructionTab" data-toggle="tab">@ViewBag.LabelInstruction</a></li>
+                    <li><a href="#properyTab" data-toggle="tab">@ViewBag.LabelPropery</a></li>
+                    <li><a href="#pictureTab1" data-toggle="tab">@ViewBag.LabelPicture1</a></li>
+                    <li><a href="#pictureTab2" data-toggle="tab">@ViewBag.LabelPicture2</a></li>
+                    <li><a href="#pictureTab3" data-toggle="tab">@ViewBag.LabelPicture3</a></li>
+                </ul>
+                <div class="tab-content">
+                    <div class="tab-pane active" id="mastTab">
+                        <div class="form-horizontal">
+                            <input type="hidden" data-field="ItemGuid" value="@(item == null ? "" : item.ItemGuid)" />
+                            <div class="form-group">
+                                <label for="icode" class="col-sm-1 control-label">@ViewBag.LabelCode</label>
+                                <div class="col-sm-2">
+                                    <input type="text" class="form-control" data-field="ItemCode" id="icode" @Html.Raw(item == null ? "" : " value=\"" + item.ItemCode + "\"") data-required />
+                                </div>
+                                <label for="iname" class="col-sm-1 control-label">@ViewBag.LabelDescription</label>
+                                <div class="col-sm-2">
+                                    <input type="text" class="form-control" data-field="ItemName" id="iname" @Html.Raw(item == null ? "" : " value=\"" + item.ItemName_CN + "\"") data-required />
+                                </div>
+                                <label class="col-sm-1 control-label">@ViewBag.LabelDescription_EN</label>
+                                <div class="col-sm-2">
+                                    <input type="text" class="form-control" data-field="ItemName_EN" id="iname" @Html.Raw(item == null ? "" : " value=\"" + item.ItemName_EN + "\"") data-required />
+                                </div>
+                                <label for="status" class="col-sm-1 control-label">@ViewBag.LabelStatus</label>
+                                <div class="col-sm-2">
+                                    <select class="form-control" id="status" data-field="ItemStatus">
+                                        <option value="1" @Html.Raw(item == null ? "" : (item.ItemStatus.Equals(1) ? " selected" : ""))>@ViewBag.LabelStatusActive</option>
+                                        <option value="0" @Html.Raw(item == null ? "" : (item.ItemStatus.Equals(0) ? " selected" : ""))>@ViewBag.LabelStatusBlock</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="isort" class="col-sm-1 control-label">@ViewBag.LabelSort</label>
+                                <div class="col-sm-2">
+                                    <input type="text" class="form-control" data-field="ItemSort" id="isort" @Html.Raw(item == null ? "" : " value=\"" + item.ItemSort + "\"") />
+                                </div>
+                                <label for="iclassguid" class="col-sm-1 control-label">@ViewBag.LabelClassName</label>
+                                <div class="col-sm-3">
+                                    <select class="form-control" id="iclassguid" data-field="ItemClassGuid">
+                                        <option value=""></option>
+                                        @foreach (ItemClass itemClass in itemClasses)
+                                        {
+                                            <option value="@itemClass.CLassGUID" @Html.Raw(item == null ? "" : (itemClass.CLassGUID.Equals(item.ItemClassGuid) ? " selected" : ""))>@itemClass.ClassName</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="col-sm-2">
+                                    <label for="sell" class="control-label">@ViewBag.LabelBuy</label>
+                                    <input type="checkbox" class="minimal" data-field="ItemBuy" id="sell" @Html.Raw(item == null ? "" : (item.ItemBuy.Equals(1) ? " checked" : ""))>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="icontainer" class="col-sm-1 control-label">@ViewBag.LabelContainer</label>
+                                <div class="col-sm-2">
+                                    <input type="text" class="form-control" data-field="ItemContainer" id="icontainer" @Html.Raw(item == null ? "" : " value=\"" + item.ItemContainer + "\"") data-required />
+                                </div>
+                                <label for="idishsize" class="col-sm-1 control-label">@ViewBag.LabelDishSize</label>
+                                <div class="col-sm-3">
+                                    <input type="text" class="form-control" data-field="ItemDishSize" id="idishsize" @Html.Raw(item == null ? "" : " value=\"" + item.ItemDishSize + "\"") data-required />
+                                </div>
+                                <label for="othercost" class="col-sm-2 control-label">@ViewBag.LabelOtherCost</label>
+                                <div class="col-sm-2">
+                                    <input type="text" class="form-control" data-field="OtherCost" id="othercost" @Html.Raw(item == null ? "" : " value=\"" + item.OtherCost + "\"") data-required />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-pane" id="tipsTab">
+                        <div>
+                            <textarea id="itips" class="form-control blocked" rows="5" data-field="ItemTips" data-required>@Html.Raw(item == null ? "" : item.ItemTips)</textarea>
+                        </div>  
+                    </div>
+                    <div class="tab-pane" id="cookingTab">
+                        <div>
+                            <textarea id="icooking" class="form-control blocked" rows="5" data-field="ItemCooking" data-required>@Html.Raw(item == null ? "" : item.ItemCooking)</textarea>
+                        </div>                
+                    </div>
+                    <div class="tab-pane" id="instructionTab">
+                        <div>
+                            <textarea id="iinstruction" class="form-control blocked" rows="5" data-field="ItemNutrition" data-required>@Html.Raw(item == null ? "" : item.ItemNutrition)</textarea>
+                        </div>                    
+                    </div>
+                    <div class="tab-pane" id="properyTab">
+                        <div class="form-horizontal">
+                            @foreach (DictGroup dictGrp in itemDicts)
+                            {
+                                <h4>@dictGrp.DictType</h4>
+                                itemDictDetails = dictGrp.Details.Skip(i).ToList();
+                                while (itemDictDetails != null && itemDictDetails.Count > 0)
+                                {
+                                    <div class="form-group">
+                                        @foreach (DictDetail dict in itemDictDetails.Take(3))
+                                        {
+                                            <label class="col-sm-2 control-label">@dict.Name</label>
+                                            <div class="col-sm-2">
+                                                <input type="text" class="form-control" data-field="@dict.Code" data-field-name="@dict.Name" value="@dict.Value" data-required />
+                                            </div>
+                                        }
+                                    </div>
+                                    i += 3;
+                                    itemDictDetails = dictGrp.Details.Skip(i).ToList();
+                                }
+                                i = 0;
+                            }
+                        </div>
+                    </div>
+                    <div class="tab-pane" id="pictureTab1">
+                        <input type="file" data-tag="imgs1" data-pic="@Html.Raw(item == null ? "" : item.ImageName1)" class="file-loading" accept="image/*">
+                        <input type="hidden" id="imgs1" data-field="Image1" value="@Html.Raw(item == null ? "" : item.Image1)" />
+                    </div>
+                    <div class="tab-pane" id="pictureTab2">
+                        <input type="file" data-tag="imgs2" data-pic="@Html.Raw(item == null ? "" : item.ImageName2)" class="file-loading" accept="image/*">
+                        <input type="hidden" id="imgs2" data-field="Image2" value="@Html.Raw(item == null ? "" : item.Image2)" />
+                    </div>
+                    <div class="tab-pane" id="pictureTab3">
+                        <input type="file" data-tag="imgs3" data-pic="@Html.Raw(item == null ? "" : item.ImageName3)" class="file-loading" accept="image/*">
+                        <input type="hidden" id="imgs3" data-field="Image3" value="@Html.Raw(item == null ? "" : item.Image3)" />
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">@ViewBag.LabelClose</button>
+						@if(ViewBag.Permission == "Full")
+						{
+							<button type="button" id="detailSave" class="btn btn-primary">@ViewBag.LabelSave</button>
+						}						
+        </div>
+    </div>
+</div>
+<script>
+    $(function () {
+        $('.file-loading').each(function () {
+            var tag = $(this).attr('data-tag');
+            var picName = $(this).attr('data-pic');
+            $(this).fileinput({
+                language: '@ViewBag.Language',
+                uploadAsync: true,
+                uploadUrl: '@Url.Content("~/api/SEMIApi/UploadFGImageData/" + ViewBag.Language + "/?picFile=" + ViewBag.PicFile)&tag=' + tag + "&action=url&field=",
+                autoReplace: true,
+                overwriteInitial: true,								
+                showUploadedThumbs: false,
+                maxFileCount: 1,
+                initialPreview: picName == '' ? [] : [
+                    "<img src='@ViewBag.PicUrl/@ViewBag.PicFile/" + tag + "/" + picName + "'>"
+                ],
+                initialCaption: picName,
+                initialPreviewShowDelete: false,
+                showRemove: false,
+                showClose: false,
+                showBrowse: '@ViewBag.Permission' == 'Full',
+            		showCaption: '@ViewBag.Permission' == 'Full',								
+                layoutTemplates: {
+                    actionDelete: '',
+                    actionZoom: '',
+                    main1: '{preview}<div class="input-group {class}"><div class="input-group-btn">{browse}{upload}{remove}</div>{caption}</div>'
+                },
+                allowedFileExtensions: ["jpg", "png", "gif"]
+            }).on("fileuploaded", function (event, data, previewId, index) {
+                if (data.response.Status === 'ok') {
+                    var path = '@ViewBag.PicFile\\' + tag + '\\' + data.response.FileName;
+                    $('#' + tag).val(path);
+                }
+                else {
+                    $('#alertModal .modal-body').html('<p><strong>' + data.response.Msg + '</strong></p>');
+                    $('#alertModal').modal('show');
+                }
+            });
+        });
+        $('#detailSave').on('click', function () {
+            var checked = true;
+            var id = '';
+            //检查所有input标签中data-required必选项值是否为空
+            $('#FGDetail input[data-required],#FGDetail textarea[data-required]').each(function () {
+                if ($.trim($(this).val()) == '') {
+                    $(this).parent('div').addClass('has-error');
+                    if (id === '') id = $(this).parents('div.tab-pane').attr('id');
+                    checked = false;
+                }
+            });
+            if (!checked) {
+                if (id !== '') $("ul.nav-tabs a[href='#" + id + "']").tab('show');
+                return;
+            }
+            var jsonBuilder = new StringBuilder();
+            $('#mastTab input[data-field],#tipsTab textarea[data-field],#cookingTab textarea[data-field],#instructionTab textarea[data-field]').each(function () {
+                if (jsonBuilder.length() > 0) jsonBuilder.append(',');
+                if ($(this).attr('type') == 'checkbox') {
+                    jsonBuilder.append("\"" + $(this).attr('data-field') + "\":\"" + ($(this).prop('checked') ? "1" : "0") + "\"");
+                }
+                else {
+                    jsonBuilder.append("\"" + $(this).attr('data-field') + "\":\"" + $.jsonCheck($(this).val()) + "\"");
+                }
+            });
+            $('#pictureTab1 input[data-field],#pictureTab2 input[data-field],#pictureTab3 input[data-field]').each(function () {
+                if (jsonBuilder.length() > 0) jsonBuilder.append(',');
+                jsonBuilder.append("\"" + $(this).attr('data-field') + "\":\"" + $.jsonCheck($(this).val()) + "\"");
+            });
+            $('#mastTab select[data-field]').each(function () {
+                if (jsonBuilder.length() > 0) jsonBuilder.append(',');
+                jsonBuilder.append("\"" + $(this).attr('data-field') + "\":\"" + $(this).children('option:selected').val() + "\"");
+            });
+            var properyBuilder = new StringBuilder();
+            $('#properyTab input[data-field]').each(function () {
+                if (properyBuilder.length() > 0) properyBuilder.append(',');
+                properyBuilder.append("{\"DictCode\":\"" + $(this).attr('data-field') + "\","
+                    + "\"PropValue\":\"" + $.jsonCheck($(this).val()) + "\",\"DictName\":\"" + $(this).attr('data-field-name') + "\"}");
+            });
+            if (properyBuilder.length() > 0) {
+                properyBuilder.insert(0, ",\"ItemProperies\":[").append("]");
+                jsonBuilder.append(properyBuilder.toString());
+            }
+            if (jsonBuilder.length() > 0) {
+                jsonBuilder.append(",\"ItemType\":\"@ViewBag.Type\"}").insert(0, "{");
+                $('#FGDetail button').prop('disabled', true);
+                actionRequest.post({
+                    url: '@Url.Content("~/api/SEMIApi/EditFG/" + ViewBag.Language)',
+                    postData: $.parseJSON(jsonBuilder.toString()),
+                    success: function (response) {
+                        if (response !== undefined && response !== null && response.Status == 'ok') {
+                            $('#searchKey').val(response.Msg);
+                            Item.search('@ViewBag.Type');
+                            $('#commonModal').modal('hide');
+                        }
+                        else {
+                            $('#FGDetail button').prop('disabled', false);
+                            $('#alertModal .modal-body').html('<p><strong>'
+                               + (response === undefined || response === null ? "Server error" : response.Msg) + '</strong></p>');
+                            $('#alertModal').modal('show');
+                        }
+                    },
+                    error: function (msg) {
+                        $('#alertModal .modal-body').html('<p><strong>' + msg + '</strong></p>');
+                        $('#alertModal').modal('show');
+                        $('#FGDetail button').prop('disabled', false);
+                    }
+                });
+            }
+        });
+
+        $("#FGDetail input[data-required],#FGDetail textarea[data-required]").attr('placeholder', '@ViewBag.LabelRequired').on('focus', function () {
+            $(this).parent('div').removeClass('has-error');
+        });
+
+        $('#FGDetail input[type="checkbox"].minimal').iCheck({
+            checkboxClass: 'icheckbox_minimal-blue',
+            radioClass: 'iradio_minimal-blue'
+        });
+
+        $("#othercost").inputmask("decimal", { allowMinus: false });
+    });
+</script>

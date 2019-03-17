@@ -1,0 +1,156 @@
+﻿
+<div class="row">
+    <div class="col-xs-12">
+        <div class="box">
+            <div class="box-body">
+                <div class="col-sm-12 form-horizontal">
+                    <div class="form-group">
+                        <div class="col-sm-3">
+                            <button class="btn btn-primary ladda-button" data-style="zoom-out" onclick="SPL.edit(this)">
+                                <i class="glyphicon glyphicon-plus"></i> @ViewBag.LabelNew
+                            </button>
+                        </div>
+                        <div class="col-sm-2">
+                            <select class="form-control" id="site">
+                                @foreach (var site in @ViewBag.SiteList)
+                                {
+                                    <option value="@site.SiteGuid">@Html.Raw(site.SiteCode + "/" + site.SiteName)</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-sm-3 input-group">
+                            <input type="text" id="searchKey" placeholder="@ViewBag.LabelSearchHint" class="form-control">
+                            <span class="input-group-btn">
+                                <button type="button" class="btn btn-primary" id="searchBtn" onclick="SPL.search()">@ViewBag.LabelSearch</button>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <table id="pricelist" class="table table-striped table-bordered dataTable">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>@ViewBag.LabelCode</th>
+                            <th>@ViewBag.LabelDescription</th>
+                            <th>@ViewBag.LabelDescription_EN</th>
+                            <th>@ViewBag.LabelClassName</th>
+                            <th>@ViewBag.LabelContainer</th>
+                            <th>@(ViewBag.LabelPrice + "(CNY)")</th>
+                            <th>@ViewBag.LabelStartDate</th>
+                            <th>@ViewBag.LabelEndDate</th>
+                            <th>@ViewBag.LabelEdit</th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    var SPL = {
+        tbl: null,
+        clear: function () {
+            if (SPL.tbl != undefined && SPL.tbl != null) {
+                SPL.tbl.clear();
+                SPL.tbl.draw();
+            }
+        },
+        search: function () {
+            if (SPL.tbl === null) {
+                SPL.tbl = $('#pricelist').DataTable({
+                    searching: false,
+                    lengthMenu: [[10, 15, 30, -1], [10, 15, 30, "ALL"]],
+                    dom: 'rt<"bottom"iflp<"clear">>',
+                    processing: true,
+                    stateSave: false,
+                    deferRender: true,
+                    language: {
+                        "processing": "@ViewBag.LabelLoading",
+                        "zeroRecords": "@ViewBag.LabelNoData",
+                        "lengthMenu": "@ViewBag.LabelLengthMenu",
+                        "info": "@ViewBag.LabelTableInfo",
+                        "infoEmpty": "@ViewBag.LabelTableInfoEmpty",
+                        "paginate": {
+                            "first": "@ViewBag.LabelFirstPage",
+                            "previous": "@ViewBag.LabelPreviousPage",
+                            "next": "@ViewBag.LabelNextPage",
+                            "last": "@ViewBag.LabelLastPage"
+                        }
+                    },
+                    ajax: {
+                        "url": '@Url.Content("~/api/SEMIApi/GetTableSalesPriceList/" + @ViewBag.Language)',
+                        "type": "POST",
+                        "data": function (d) {
+                            d.BUGuid = $('#site').children('option:selected').val(),
+                            d.KeyWords = $('#searchKey').val()
+                        }
+                    },
+                    columns: [
+                        { data: 'Sort' },
+                        { data: 'ItemCode' },
+                        { data: 'ItemName_CN' },
+                        { data: 'ItemName_EN' },
+                        { data: 'ItemClassName' },
+                        { data: 'Container' },
+                        { data: 'Price' },
+                        { data: 'startDate' },
+                        { data: 'endDate'}
+
+                    ],
+                    columnDefs: [{
+                        targets: 9,
+                        data: null,
+                        defaultContent: '<button class="btn btn-primary btn-xs ladda-button" data-style="zoom-out">'
+                            + '<i class="fa fa-edit"></i></button>'
+                    }]
+                });
+                $('#pricelist tbody').on('click', 'button', function () {
+                    var data = SPL.tbl.row($(this).parents('tr')).data();
+                    SPL.edit($(this)[0], data);
+                });
+            }
+            else SPL.tbl.ajax.reload();
+        },
+
+        edit: function (o, data) {
+            if (action) return;
+            else {
+                action = true;
+                $('#commonModal').html('');
+            }
+            var l = Ladda.create(o);
+            l.start();
+            actionRequest.post({
+                url: '@Url.Content("~/SEMI/SalesPriceDetailbySite/" + ViewBag.Language)',
+                postData: {
+                    RecordID: data === undefined || data === null ? '' : data.RecordID,
+                    ItemCode: data === undefined || data === null ? '' : data.ItemCode,
+                    ItemName: data === undefined || data === null ? '' : data.ItemName_CN,
+                    startDate: data === undefined || data === null ? '' : data.startDate,
+                    endDate: data === undefined || data === null ? '' : data.endDate,
+                    Price: data === undefined || data === null ? '' : data.Price,
+                    SiteGuid: $('#site').children('option:selected').val() //
+                },
+                dataType: 'html',
+                success: function (response) {
+                    $('#commonModal').html(response);
+                    $('#commonModal').modal('show');
+                },
+                complete: function (xhr) {
+                    action = false;
+                    l.stop();
+                }
+            });
+        },
+    };
+    $(function () {
+        $('#site').on('change', function () {
+            SPL.clear();
+
+
+        });
+        $('#searchKey').on('keydown', function (event) {
+            if (event.keyCode === 13) $('#searchBtn').click();
+        }).focus();
+    });
+</script>

@@ -1,0 +1,321 @@
+﻿<div class="row">
+    <div class="col-xs-12">
+        <div class="box">
+            <div class="box-body">
+                <div class="col-sm-12 form-horizontal">
+                    <div class="form-group">
+                        <div class="@Html.Raw(ViewBag.Type == "FG" ? "col-sm-7" : "col-sm-3")">
+                            @if (ViewBag.Permission == "Full")
+                            {
+                                <button class="btn btn-primary ladda-button" data-style="zoom-out" onclick="Item.edit(this)">
+                                    <i class="glyphicon glyphicon-plus"></i> @ViewBag.LabelNew
+                                </button>if (ViewBag.Type == "FG")
+                                {
+                                    <button class="btn btn-info ladda-button" data-style="zoom-out" onclick="Item.editClass(this)">
+                                        <i class="glyphicon glyphicon-plus"></i> @ViewBag.LabelClassName
+                                    </button>
+
+                                    if (ViewBag.siteUser == false)
+                                    {
+                                        <button class="btn btn-warning ladda-button" data-style="zoom-out" onclick="Item.upload(this,'BOM')">
+                                            <i class="glyphicon glyphicon-arrow-up"></i> @ViewBag.LabelBOMUpload
+                                        </button>
+                                        <button class="btn btn-danger ladda-button" data-style="zoom-out" onclick="Item.uploadPics(this)">
+                                            <i class="glyphicon glyphicon-arrow-up"></i> @ViewBag.LabelPicUpload
+                                        </button>
+                                    }
+                                }
+                                if (ViewBag.siteUser == false)
+                                {
+                                        <button class="btn btn-success ladda-button" data-style="zoom-out" onclick="Item.upload(this,'@ViewBag.Type')">
+                                            <i class="glyphicon glyphicon-arrow-up"></i> @ViewBag.LabelDataUpload
+                                        </button>
+                                }
+                            }
+                        </div>
+                        <div class="col-sm-2">
+                            <input id="siteUser" value="@Html.Raw(ViewBag.siteUser)" hidden/>
+                            <select class="form-control" id="itemStatus">
+                                <option value="1">@ViewBag.LabelStatusActive</option>
+                                <option value="0">@ViewBag.LabelStatusBlock</option>
+                            </select>
+                        </div>
+                        <div class="col-sm-3 input-group">
+                            <input type="text" id="searchKey" placeholder="@ViewBag.LabelSearchHint" class="form-control">
+                            <span class="input-group-btn">
+                                <button type="button" class="btn btn-primary" id="searchBtn" onclick="Item.search()">@ViewBag.LabelSearch</button>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <table id="item" class="table table-striped table-bordered dataTable">
+                    <thead>
+                        <tr>
+                            @if (ViewBag.Type == "FG")
+                            {
+                                <th>@ViewBag.LabelSort</th>
+                            }
+                            <th>@ViewBag.LabelCode</th>
+                            <th>@ViewBag.LabelDescription</th>
+                            <th>@ViewBag.LabelDescription_EN</th>
+                            <th>@ViewBag.LabelClassName</th>
+                            @if (ViewBag.Type == "RM")
+                            {
+                                <th>@ViewBag.LabelSpec</th>
+                                <th>@ViewBag.LabelPurchaseUnit</th>
+                                <th>@ViewBag.LabelLoss</th>
+                                <th>@ViewBag.LabelPurchasePolicy</th>
+                            }
+                            else if (ViewBag.Type == "FG")
+                            {
+                                <th>@ViewBag.LabelDishSize</th>
+                                <th>@ViewBag.LabelContainer</th>
+                                <th>@ViewBag.LabelWeight</th>
+                                <th>@ViewBag.LabelOtherCost</th>
+                            }
+                            <th>@ViewBag.LabelCreateTime</th>
+                            <th>BOM</th>
+                            <th>@ViewBag.LabelEdit</th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    $(function(){
+        $('#searchKey').on('keydown', function (event) {
+            if (event.keyCode === 13) $('#searchBtn').click();
+        }).focus();
+    });
+    var Item = {
+        tbl: null,
+        search: function () {
+            if (Item.tbl === null) {
+                Item.tbl = $('#item').DataTable({
+                    searching: false,
+                    lengthMenu: [[10, 15, 30, -1], [10, 15, 30, "ALL"]],
+                    dom: 'rt<"bottom"iflp<"clear">>',
+                    processing: true,
+                    stateSave: false,
+                    deferRender: true,
+                    language: {
+                        "processing": "@ViewBag.LabelLoading",
+                        "zeroRecords": "@ViewBag.LabelNoData",
+                        "lengthMenu": "@ViewBag.LabelLengthMenu",
+                        "info": "@ViewBag.LabelTableInfo",
+                        "infoEmpty": "@ViewBag.LabelTableInfoEmpty",
+                        "paginate": {
+                            "first": "@ViewBag.LabelFirstPage",
+                            "previous": "@ViewBag.LabelPreviousPage",
+                            "next": "@ViewBag.LabelNextPage",
+                            "last": "@ViewBag.LabelLastPage"
+                        }
+                    },
+                    createdRow: function (row, data, index) {
+                        //var s = $('#siteUser').val();
+                        if ($('#siteUser').val() == true) {
+                            $("td", row).eq(10).html('');
+                        }
+                    },
+                    ajax: {
+                        "url": '@Url.Content("~/api/SEMIApi/GetTable" + ViewBag.Type + "Datas/" + @ViewBag.Language)',
+                        "type": "POST",
+                        "data": function (d) {
+                            d.Status = $('#itemStatus').children('option:selected').val(),
+                            d.KeyWords = $('#searchKey').val()
+                        }
+                    },
+                    columns: [
+                    @if(ViewBag.Type == "FG")
+                    {
+                        @Html.Raw("{data:'ItemSort'},");
+                    }
+                    { data: 'ItemCode' },
+                    { data: 'ItemName_CN' },
+                    { data: 'ItemName_EN' },
+                    { data: 'ItemClassName' },
+                    @if (ViewBag.Type == "RM")
+                    {
+                        @Html.Raw("{data:'ItemSpec' },{data:'ItemUnit'},{data:'ItemLoss'},{data:'PurchasePolicy',"
+                            + "render: function (data, type, row, meta) {if(data=='OnDemand') return '" + ViewBag.LabelOnDemand
+                            + "';if(data=='NoPurchase') return '" + ViewBag.LabelNoPurchase + "';return data;}},"
+                            + "{data:'ItemCreateTime'},{data:null,defaultContent:'<button class=\"btn btn-success btn-xs ladda-button\" "
+                            + "data-style=\"zoom-out\" data-action=\"bomview\"><i class=\"fa fa-eye\"></i></button>'}");
+                    }
+                        else if (ViewBag.Type == "FG")
+                    {
+                        @Html.Raw("{data:'ItemDishSize'},{data:'ItemContainer'},"
+                            + "{data:'ItemWeight',render:function (data, type, row, meta) {return data+'g';}},"
+                            + "{data:'OtherCost'},{data:'ItemCreateTime'},"
+                            + "{data:null,defaultContent:'<button class=\"btn btn-success btn-xs ladda-button\" "
+                            + "data-style=\"zoom-out\" data-action=\"bom\"><i class=\"fa fa-edit\"></i></button>'}");
+                    }
+                    ],
+                    columnDefs: [{
+                        targets: @Html.Raw(ViewBag.Type == "FG"?"11":"10"),
+                        data: null,
+                        defaultContent: '<button class="btn btn-primary btn-xs ladda-button" data-action="edit" data-style="zoom-out">'
+                            + '<i class="fa fa-edit"></i></button>'
+                    }]
+                });
+                $('#item tbody').on('click', 'button', function () {
+                    var data = Item.tbl.row($(this).parents('tr')).data();
+                    var act = $(this).attr('data-action');
+                    if(act === "bom") Item.bom($(this)[0], data);
+                    if(act === "edit") Item.edit($(this)[0], data);
+                    if(act == "bomview") Item.view($(this)[0], data);
+                });
+            }
+            else Item.tbl.ajax.reload();
+        },
+        edit: function (o, data) {
+            if (action) return;
+            else {
+                action = true;
+                $('#commonModal').html('');
+            }
+            var l = Ladda.create(o);
+            l.start();
+            actionRequest.post({
+                url: '@Url.Content("~/SEMI/" + ViewBag.Type + "ItemDetail/" + ViewBag.Language)',
+                postData: {
+                    ItemGuid: data === undefined || data === null ? '' : data.ItemGuid,
+                    Type: '@ViewBag.Type',
+                		Permission: '@ViewBag.Permission'
+                },
+                dataType: 'html',
+                success: function (response) {
+                    $('#commonModal').html(response);
+                    $('#commonModal').modal('show');
+                },
+                complete: function (xHR) {
+                    action = false;
+                    l.stop();
+                }
+            });
+        },
+        bom: function (o, data) {
+            console.log(data.ItemName_CN.replaceAll("<br>", ";"));
+            console.log(data.ItemName_EN.replaceAll("<br>", ";"));
+            if (action) return;
+            if (action) return;
+            else {
+                action = true;
+                $('#commonModal').html('');
+            }
+            var l = Ladda.create(o);
+            l.start();
+            actionRequest.post({
+                url: '@Url.Content("~/SEMI/BOMEdit/" + ViewBag.Language)',
+                postData: {
+                    ItemGuid: data === undefined || data === null ? '' : data.ItemGuid,
+                    ItemCode: data === undefined || data === null ? '' : data.ItemCode,
+                    ItemName_CN: data === undefined || data === null ? '' : data.ItemName_CN.replaceAll("<br>", ";"),
+                    ItemName_EN: data === undefined || data === null ? '' : data.ItemName_EN.replaceAll("<br>", ";"),
+                    Permission: '@ViewBag.Permission'
+                },
+                dataType: 'html',
+                success: function (response) {
+                    $('#commonModal').html(response);
+                    $('#commonModal').modal('show');
+                },
+                complete: function (xHR) {
+                    action = false;
+                    l.stop();
+                }
+            });
+        },
+        view : function(o, data){
+            if (action) return;
+            else {
+                action = true;
+                $('#commonModal').html('');
+            }
+            var l = Ladda.create(o);
+            l.start();
+            actionRequest.post({
+                url: '@Url.Content("~/SEMI/BOMProduct/" + ViewBag.Language)',
+                postData: {
+                    ItemGuid: data === undefined || data === null ? '' : data.ItemGuid
+                },
+                dataType: 'html',
+                success: function (response) {
+                    $('#commonModal').html(response);
+                    $('#commonModal').modal('show');
+                },
+                complete: function (xHR) {
+                    action = false;
+                    l.stop();
+                }
+            });
+        },
+        uploadPics: function(o){
+            if (action) return;
+            else {
+                action = true;
+                $('#commonModal').html('');
+            }
+            var l = Ladda.create(o);
+            l.start();
+            actionRequest.post({
+                url: '@Url.Content("~/SEMI/UploadFGPics/" + ViewBag.Language)',
+                postData: { },
+                dataType: 'html',
+                success: function (response) {
+                    $('#commonModal').html(response);
+                    $('#commonModal').modal('show');
+                },
+                complete: function (xhr) {
+                    action = false;
+                    l.stop();
+                }
+            });
+        },
+        upload: function (o, type) {
+            if (action) return;
+            else {
+                action = true;
+                $('#commonModal').html('');
+            }
+            var l = Ladda.create(o);
+            l.start();
+            actionRequest.post({
+                url: '@Url.Content("~/SEMI/UploadExcelData/" + ViewBag.Language)',
+                postData: { Type: type, JSObject: 'Item' },
+                dataType: 'html',
+                success: function (response) {
+                    $('#commonModal').html(response);
+                    $('#commonModal').modal('show');
+                },
+                complete: function (xhr) {
+                    action = false;
+                    l.stop();
+                }
+            });
+        },
+        editClass: function (o) {
+            if (action) return;
+            else {
+                action = true;
+                $('#commonModal').html('');
+            }
+            var l = Ladda.create(o);
+            l.start();
+            actionRequest.post({
+                url: '@Url.Content("~/SEMI/FGItemClass/" + ViewBag.Language)',
+                postData: {},
+                dataType: 'html',
+                success: function (response) {
+                    $('#commonModal').html(response);
+                    $('#commonModal').modal('show');
+                },
+                complete: function (xHR) {
+                    action = false;
+                    l.stop();
+                }
+            });
+        }
+    }
+</script>

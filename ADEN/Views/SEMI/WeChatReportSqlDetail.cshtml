@@ -1,0 +1,210 @@
+﻿@using Model.WeChatSqlMessage
+@{
+    WeChatSqlMessageData data = ViewBag.Data;
+}
+<div class="modal-dialog modal-lg" id="WeChatReportSqlDetail">
+    <div class="modal-content">
+        <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+            <h4 class="modal-title">@(data == null ? ViewBag.LabelNew : ViewBag.LabelEdit)</h4>
+        </div>
+        <div class="modal-body">
+            <div class="nav-tabs-custom">
+                <ul class="nav nav-tabs">
+                    <li class="active"><a href="#mastTab" data-toggle="tab">@ViewBag.LabelMastData</a></li>
+                    <li><a href="#contentSqlTab" data-toggle="tab">@ViewBag.LabelContentSql</a></li>
+                    <li><a href="#titleSqlTab" data-toggle="tab">@ViewBag.LabelTitleSql</a></li>
+                </ul>
+                <div class="tab-content">
+                    <div class="tab-pane active" id="mastTab">
+                        <div class="form-horizontal">
+                            <input type="hidden" id="guid" data-field="GUID" value="@(data == null ? "" : data.GUID)" />
+                            <div class="form-group">
+                                <label for="wname" class="col-sm-2 control-label">@ViewBag.LabelDescription</label>
+                                <div class="col-sm-3">
+                                    <input type="text" class="form-control" data-field="Name" id="wname" @Html.Raw(data == null ? "" : " value=\"" + data.Name + "\"") data-required />
+                                </div>
+                                <label for="wstatus" class="col-sm-1 control-label">@ViewBag.LabelStatus</label>
+                                <div class="col-sm-2">
+                                    <select class="form-control" id="wstatus" data-field="Status">
+                                        <option value="1" @Html.Raw(data == null ? "" : (data.Status.Equals(1) ? " selected" : ""))>@ViewBag.LabelStatusActive</option>
+                                        <option value="0" @Html.Raw(data == null ? "" : (data.Status.Equals(0) ? " selected" : ""))>@ViewBag.LabelStatusBlock</option>
+                                    </select>
+                                </div>
+                                <label for="wdtype" class="col-sm-2 control-label">@ViewBag.LabelDisplayType</label>
+                                <div class="col-sm-2">
+                                    <select class="form-control" id="wstatus" data-field="DisplayType">
+                                        <option></option>
+                                        <option value="Table" @Html.Raw(data == null ? "" : (data.DisplayType.Equals("Table") ? " selected" : ""))>@ViewBag.LabelTable</option>
+                                        <option value="List" @Html.Raw(data == null ? "" : (data.DisplayType.Equals("List") ? " selected" : ""))>@ViewBag.LabelList</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="wlinkname" class="col-sm-2 control-label">@ViewBag.LabelLinkName</label>
+                                <div class="col-sm-3">
+                                    <input type="text" class="form-control" data-field="LinkName" id="wlinkname" @Html.Raw(data == null ? "" : " value=\"" + data.LinkName + "\"") />
+                                </div>
+                                <label for="wlinkfield" class="col-sm-2 control-label">@ViewBag.LabelLinkField</label>
+                                <div class="col-sm-2">
+                                    <input type="text" class="form-control" data-field="LinkField" id="wlinkfield" @Html.Raw(data == null ? "" : " value=\"" + data.LinkField + "\"") />
+                                </div>      
+                            </div>
+                            <div class="form-group">
+                                <label for="wparent" class="col-sm-2 control-label">@ViewBag.LabelMainQuery</label>
+                                <div class="col-sm-3">
+                                    <input type="text" class="form-control" data-field="ParentGUID" data-value-alias="guid" id="wparent" @Html.Raw(data == null ? "" : " data-guid=\"" + data.ParentGUID + "\" value=\"" + data.ParentName + "\"") />
+                                </div>   
+                                <label for="wspacenumber" class="col-sm-2 control-label">@ViewBag.LabelSpaceNumber</label>
+                                <div class="col-sm-2">
+                                    <input type="text" class="form-control" data-field="SpaceNumber" id="wspacenumber" @Html.Raw(data == null ? "" : " value=\"" + data.SpaceNumber + "\"") />
+                                </div>  
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-pane" id="contentSqlTab">
+                        <div>
+                            <textarea id="contentsql" class="form-control blocked" rows="7" data-field="ContentSQL" data-required>@Html.Raw(data == null ? "" : data.ContentSQL)</textarea>
+                        </div>
+                    </div>
+                    <div class="tab-pane" id="titleSqlTab">
+                        <div>
+                            <textarea id="titlesql" class="form-control blocked" rows="7" data-field="TitleSQL" data-required>@Html.Raw(data == null ? "" : data.TitleSQL)</textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">@ViewBag.LabelClose</button>
+            @if (data != null && !string.IsNullOrWhiteSpace(data.GUID))
+            {
+                <button type="button" id="detailDel" class="btn btn-danger">@ViewBag.LabelDelete</button>
+            }
+            <button type="button" id="detailSave" class="btn btn-primary">@ViewBag.LabelSave</button>
+        </div>
+    </div>
+</div>
+<script>
+    var ajaxEdit = function (json) {
+        $('#WeChatReportSqlDetail button').prop('disabled', true);
+        actionRequest.post({
+            url: '@Url.Content("~/api/SEMIApi/EditWeChatReportSql/" + ViewBag.Language)',
+            postData: $.parseJSON(json),
+            success: function (response) {
+                if (response !== undefined && response !== null && response.Status == 'ok') {
+                    $('#searchKey').val(response.Msg);
+                    WeChatRpt.search();
+                    $('#commonModal').modal('hide');
+                }
+                else {
+                    $('#WeChatReportSqlDetail button').prop('disabled', false);
+                    $('#alertModal .modal-body').html('<p><strong>'
+                       + (response === undefined || response === null ? "Server error" : response.Msg) + '</strong></p>');
+                    $('#alertModal').modal('show');
+                }
+            },
+            error: function (msg) {
+                $('#alertModal .modal-body').html('<p><strong>' + msg + '</strong></p>');
+                $('#alertModal').modal('show');
+                $('#WeChatReportSqlDetail button').prop('disabled', false);
+            }
+        });
+    };
+    $(function () {
+        $("#WeChatReportSqlDetail input[data-required],#WeChatReportSqlDetail textarea[data-required]").attr('placeholder', '@ViewBag.LabelRequired').on('focus', function () {
+            $(this).parent('div').removeClass('has-error');
+        });
+        $("#wspacenumber").inputmask("integer", { allowMinus: false });
+        $('#detailDel').on('click', function () {
+            ajaxEdit("{\"IsDel\":\"1\", \"GUID\":\"" + $('#guid').val() + "\"}");
+        });
+        $('#detailSave').on('click', function () {
+            var checked = true;
+            var id = '';
+            //检查所有input标签中data-required必选项值是否为空
+            $('#WeChatReportSqlDetail input[data-required],#WeChatReportSqlDetail textarea[data-required]').each(function () {
+                if ($.trim($(this).val()) == '') {
+                    $(this).parent('div').addClass('has-error');
+                    if (id === '') id = $(this).parents('div.tab-pane').attr('id');
+                    checked = false;
+                }
+            });
+            if (!checked) {
+                if (id !== '') $("ul.nav-tabs a[href='#" + id + "']").tab('show');
+                return;
+            }
+            var jsonBuilder = new StringBuilder();
+            $('#mastTab input[data-field],#contentSqlTab textarea[data-field],#titleSqlTab textarea[data-field]').each(function () {
+                if (jsonBuilder.length() > 0) jsonBuilder.append(',');
+                jsonBuilder.append("\"" + $(this).attr('data-field') + "\":\"");
+                if ($(this).attr('data-value-alias') == undefined) jsonBuilder.append($.jsonCheck($(this).val()) + "\"");
+                else {
+                    var aliasVal = $(this).attr('data-' + $(this).attr('data-value-alias'));
+                    if (aliasVal == undefined) aliasVal = '';
+                    jsonBuilder.append($.jsonCheck(aliasVal) + "\"");
+                }
+            });
+            $('#mastTab select[data-field]').each(function () {
+                if (jsonBuilder.length() > 0) jsonBuilder.append(',');
+                jsonBuilder.append("\"" + $(this).attr('data-field') + "\":\"" + $(this).children('option:selected').val() + "\"");
+            });
+            if (jsonBuilder.length() > 0) {
+                jsonBuilder.append("}").insert(0, "{");
+                ajaxEdit(jsonBuilder.toString());
+            }
+        });
+        var typeSource = null;
+        $('#wparent').typeahead({
+            source: function (query, process) {
+                if (typeSource == undefined || typeSource == null) {
+                    actionRequest.post({
+                        url: '@Url.Content("~/api/SEMIApi/GetWeChatReportSqlMastDatas/" + ViewBag.Language)',
+                        postData: {
+                            Status: 1,
+                            GUID: $('#guid').val()
+                        },
+                        success: function (data) {
+                            typeSource = data;
+                            process(typeSource);
+                        }
+                    });
+                }
+                else process(typeSource);
+            },
+            autoSelect: true,
+            matcher: function (data) {
+                if (this.query == undefined || this.query == '') return false;
+                if (data.Name.toLocaleLowerCase().indexOf(this.query.toLocaleLowerCase()) > -1) return true;
+                else return false;
+            },
+            displayText: function (data) {
+                return data.GUID;
+            },
+            highlighter: function (text, data) {
+                return data.Name;
+            },
+            updater: function (data) {
+                $('#wparent').val(data.Name);
+                $('#wparent').attr('data-guid', data.GUID);
+                return data.Name;
+            },
+            delay: 200
+        });
+        $('#wparent').change(function () {
+            var current = $('#wparent').typeahead("getActive");
+            if (current) {
+                if (current.Name != $('#wparent').val()) {
+                    $('#wparent').val('');
+                    $('#wparent').attr('data-guid', '');
+                }
+            }
+            else {
+                $('#wparent').val('');
+                $('#wparent').attr('data-guid', '');
+            }
+        });
+    });
+</script>

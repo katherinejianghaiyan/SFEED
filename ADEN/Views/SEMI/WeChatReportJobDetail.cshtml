@@ -1,0 +1,216 @@
+﻿@using Model.WeChatSqlMessage
+@{
+    WeChatSqlMessageJob job = ViewBag.Data;
+}
+<div class="modal-dialog modal-lg" id="WeChatReportJobDetail">
+    <div class="modal-content">
+        <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+            <h4 class="modal-title">@(job == null ? ViewBag.LabelNew : ViewBag.LabelEdit)</h4>
+        </div>
+        <div class="modal-body">
+            <div class="nav-tabs-custom">
+                <ul class="nav nav-tabs">
+                    <li class="active"><a href="#mastTab" data-toggle="tab">@ViewBag.LabelMastData</a></li>
+                    <li><a href="#dataSqlTab" data-toggle="tab">@ViewBag.LabelDataSql</a></li>
+                </ul>
+                <div class="tab-content">
+                    <div class="tab-pane active" id="mastTab">
+                        <div class="form-horizontal">
+                            <input type="hidden" id="jobId" data-field="ID" value="@(job == null ? "" : job.ID.ToString())" />
+                            <div class="form-group">
+                                <label for="wname" class="col-sm-2 control-label">@ViewBag.LabelDescription</label>
+                                <div class="col-sm-3">
+                                    <input type="text" class="form-control" data-field="JobName" id="wname" @Html.Raw(job == null ? "" : " value=\"" + job.JobName + "\"") data-required />
+                                </div>
+                                <label for="wstatus" class="col-sm-1 control-label">@ViewBag.LabelStatus</label>
+                                <div class="col-sm-2">
+                                    <select class="form-control" id="wstatus" data-field="Status">
+                                        <option value="1" @Html.Raw(job == null ? "" : (job.Status.Equals(1) ? " selected" : ""))>@ViewBag.LabelStatusActive</option>
+                                        <option value="0" @Html.Raw(job == null ? "" : (job.Status.Equals(0) ? " selected" : ""))>@ViewBag.LabelStatusBlock</option>
+                                    </select>
+                                </div>
+                                <label for="wrunweek" class="col-sm-2 control-label">@ViewBag.LabelRunWeek</label>
+                                <div class="col-sm-2">
+                                    <select class="form-control" id="wrunweek" data-field="RunWeek">
+                                        <option value="8" @Html.Raw(job == null ? "" : (job.RunWeek > 7 ? " selected" : ""))>@ViewBag.LabelManual</option>
+                                        <option value="0" @Html.Raw(job == null ? "" : (job.RunWeek.Equals(0) ? " selected" : ""))>@ViewBag.LabelEveryday</option>
+                                        <option value="1" @Html.Raw(job == null ? "" : (job.RunWeek.Equals(1) ? " selected" : ""))>@ViewBag.LabelMonday</option>
+                                        <option value="2" @Html.Raw(job == null ? "" : (job.RunWeek.Equals(2) ? " selected" : ""))>@ViewBag.LabelTuesday</option>
+                                        <option value="3" @Html.Raw(job == null ? "" : (job.RunWeek.Equals(3) ? " selected" : ""))>@ViewBag.LabelWensday</option>
+                                        <option value="4" @Html.Raw(job == null ? "" : (job.RunWeek.Equals(4) ? " selected" : ""))>@ViewBag.LabelThursday</option>
+                                        <option value="5" @Html.Raw(job == null ? "" : (job.RunWeek.Equals(5) ? " selected" : ""))>@ViewBag.LabelFriday</option>
+                                        <option value="6" @Html.Raw(job == null ? "" : (job.RunWeek.Equals(6) ? " selected" : ""))>@ViewBag.LabelSaturday</option>
+                                        <option value="7" @Html.Raw(job == null ? "" : (job.RunWeek.Equals(7) ? " selected" : ""))>@ViewBag.LabelSunday</option>
+                                    </select> 
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="wparam" class="col-sm-2 control-label">@ViewBag.LabelParameter</label>
+                                <div class="col-sm-6">
+                                    <input type="text" class="form-control" data-field="ParameterFields" id="wparam" @Html.Raw(job == null ? "" : " value=\"" + job.ParameterFields + "\"") data-required />
+                                </div>
+                                <label for="wdaily" class="col-sm-2 control-label">@ViewBag.LabelDailyStartTime</label>
+                                <div class="col-sm-2">
+                                    <input type="text" class="form-control" data-field="DailyStartTime" id="wdaily" @Html.Raw(job == null ? "" : " value=\"" + job.DailyStartTime + "\"") data-required />
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="wkeywords" class="col-sm-2 control-label">@ViewBag.LabelKeyWords</label>
+                                <div class="col-sm-6">
+                                    <input type="text" class="form-control" data-field="KeyFields" id="wkeywords" @Html.Raw(job == null ? "" : " value=\"" + job.KeyFields + "\"") data-required />
+                                </div>
+                                <label for="wemp" class="col-sm-2 control-label">@ViewBag.LabelReciverField</label>
+                                <div class="col-sm-2">
+                                    <input type="text" class="form-control" data-field="EmployeeIDField" id="wemp" @Html.Raw(job == null ? "" : " value=\"" + job.EmployeeIDField + "\"") data-required />
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="wsql" class="col-sm-2 control-label">@ViewBag.LabelMainQuery</label>
+                                <div class="col-sm-6">
+                                    <input type="text" class="form-control" data-field="SQLGUID" data-value-alias="guid" id="wsql" @Html.Raw(job == null ? "" : " data-guid=\"" + job.SQLGUID + "\" value=\"" + job.SQLName + "\"") data-required />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-pane" id="dataSqlTab">
+                        <div>
+                            <textarea id="datasql" class="form-control blocked" rows="7" data-field="DataSQL" data-required>@Html.Raw(job == null ? "" : job.DataSQL)</textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">@ViewBag.LabelClose</button>
+            @if (job != null && !job.ID.Equals(0))
+            {
+                <button type="button" id="detailDel" class="btn btn-danger">@ViewBag.LabelDelete</button>
+            }
+            <button type="button" id="detailSave" class="btn btn-primary">@ViewBag.LabelSave</button>
+        </div>
+    </div>
+</div>
+<script>
+    var ajaxEdit = function (json) {
+        $('#WeChatReportJobDetail button').prop('disabled', true);
+        actionRequest.post({
+            url: '@Url.Content("~/api/SEMIApi/EditWeChatReportJob/" + ViewBag.Language)',
+            postData: $.parseJSON(json),
+            success: function (response) {
+                if (response !== undefined && response !== null && response.Status == 'ok') {
+                    $('#searchKey').val(response.Msg);
+                    WeChatRptJob.search();
+                    $('#commonModal').modal('hide');
+                }
+                else {
+                    $('#WeChatReportJobDetail button').prop('disabled', false);
+                    $('#alertModal .modal-body').html('<p><strong>'
+                       + (response === undefined || response === null ? "Server error" : response.Msg) + '</strong></p>');
+                    $('#alertModal').modal('show');
+                }
+            },
+            error: function (msg) {
+                $('#alertModal .modal-body').html('<p><strong>' + msg + '</strong></p>');
+                $('#alertModal').modal('show');
+                $('#WeChatReportJobDetail button').prop('disabled', false);
+            }
+        });
+    };
+    $(function () {
+        $("#WeChatReportJobDetail input[data-required],#WeChatReportJobDetail textarea[data-required]").attr('placeholder', '@ViewBag.LabelRequired').on('focus', function () {
+            $(this).parent('div').removeClass('has-error');
+        });
+        $("#wdaily").inputmask('Regex', { regex: "(([1-9]{1})|([0-1][0-9])|([1-2][0-3])):([0-5][0-9])" });
+        $('#detailDel').on('click', function () {
+            ajaxEdit("{\"IsDel\":\"1\", \"ID\":\"" + $('#jobId').val() + "\"}");
+        });
+        $('#detailSave').on('click', function () {
+            var checked = true;
+            var id = '';
+            //检查所有input标签中data-required必选项值是否为空
+            $('#WeChatReportJobDetail input[data-required],#WeChatReportJobDetail textarea[data-required]').each(function () {
+                if ($.trim($(this).val()) == '') {
+                    $(this).parent('div').addClass('has-error');
+                    if (id === '') id = $(this).parents('div.tab-pane').attr('id');
+                    checked = false;
+                }
+            });
+            if (!checked) {
+                if (id !== '') $("ul.nav-tabs a[href='#" + id + "']").tab('show');
+                return;
+            }
+            var jsonBuilder = new StringBuilder();
+            $('#mastTab input[data-field],#dataSqlTab textarea[data-field]').each(function () {
+                if (jsonBuilder.length() > 0) jsonBuilder.append(',');
+                jsonBuilder.append("\"" + $(this).attr('data-field') + "\":\"");
+                if ($(this).attr('data-value-alias') == undefined) jsonBuilder.append($.jsonCheck($(this).val()) + "\"");
+                else {
+                    var aliasVal = $(this).attr('data-' + $(this).attr('data-value-alias'));
+                    if (aliasVal == undefined) aliasVal = '';
+                    jsonBuilder.append($.jsonCheck(aliasVal) + "\"");
+                }
+            });
+            $('#mastTab select[data-field]').each(function () {
+                if (jsonBuilder.length() > 0) jsonBuilder.append(',');
+                jsonBuilder.append("\"" + $(this).attr('data-field') + "\":\"" + $(this).children('option:selected').val() + "\"");
+            });
+            if (jsonBuilder.length() > 0) {
+                jsonBuilder.append("}").insert(0, "{");
+                ajaxEdit(jsonBuilder.toString());
+            }
+        });
+        var typeSource = null;
+        $('#wsql').typeahead({
+            source: function (query, process) {
+                if (typeSource == undefined || typeSource == null) {
+                    actionRequest.post({
+                        url: '@Url.Content("~/api/SEMIApi/GetWeChatReportSqlMastDatas/" + ViewBag.Language)',
+                        postData: {
+                            Status: 1,
+                            GUID: ''
+                        },
+                        success: function (data) {
+                            typeSource = data;
+                            process(typeSource);
+                        }
+                    });
+                }
+                else process(typeSource);
+            },
+            autoSelect: true,
+            matcher: function (data) {
+                if (this.query == undefined || this.query == '') return false;
+                if (data.Name.toLocaleLowerCase().indexOf(this.query.toLocaleLowerCase()) > -1) return true;
+                else return false;
+            },
+            displayText: function (data) {
+                return data.GUID;
+            },
+            highlighter: function (text, data) {
+                return data.Name;
+            },
+            updater: function (data) {
+                $('#wsql').val(data.Name);
+                $('#wsql').attr('data-guid', data.GUID);
+                return data.Name;
+            },
+            delay: 200
+        });
+        $('#wsql').change(function () {
+            var current = $('#wsql').typeahead("getActive");
+            if (current) {
+                if (current.Name != $('#wsql').val()) {
+                    $('#wsql').val('');
+                    $('#wsql').attr('data-guid', '');
+                }
+            }
+            else {
+                $('#wsql').val('');
+                $('#wsql').attr('data-guid', '');
+            }
+        });
+    });
+</script>

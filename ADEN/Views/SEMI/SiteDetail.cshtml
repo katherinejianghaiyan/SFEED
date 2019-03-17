@@ -1,0 +1,129 @@
+﻿@using Model.Site;
+@using Model.BU;
+@{
+    SiteMast siteMast = ViewBag.SiteMast;
+    List<BUMast> BUList = ViewBag.BUList;
+}
+<div class="modal-dialog modal-lg" id="SiteDetail">
+    <div class="modal-content">
+        <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+            <h4 class="modal-title">@(siteMast == null ? ViewBag.LabelNew : ViewBag.LabelEdit)</h4>
+        </div>
+        <div class="modal-body">
+            <div class="form-horizontal">
+                <input type="hidden" data-field="SiteGuid" value="@(siteMast == null ? "" : siteMast.SiteGuid)" />
+                @if (siteMast != null && !string.IsNullOrWhiteSpace(siteMast.BUGuid))
+                {
+                    <input type="hidden" data-field="BUGuid" value="@siteMast.BUGuid" />
+                }
+                else
+                {
+                    <div class="form-group">
+                        <label for="code" class="col-sm-2 control-label">@ViewBag.LabelSiteBU</label>
+                        <div class="col-sm-4">
+                            <select class="form-control" data-field="BUGuid">
+                                @foreach (var d in BUList)
+                                {
+                                    <option value="@d.BUGuid">@Html.Raw(d.BUCode + "-" + d.BUName)</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+                }
+                <div class="form-group">
+                    <label for="code" class="col-sm-1 control-label">@ViewBag.LabelCode</label>
+                    <div class="col-sm-3">
+                        <input type="text" class="form-control" data-field="SiteCode" id="code" @Html.Raw(siteMast == null ? "" : " value=\"" + siteMast.SiteCode + "\"") data-required />
+                    </div>
+                    <label for="name1" class="col-sm-2 control-label">@ViewBag.LabelNameCn</label>
+                    <div class="col-sm-4">
+                        <input type="text" class="form-control" data-field="NameCn" id="name1" @Html.Raw(siteMast == null ? "" : " value=\"" + siteMast.NameCn + "\"") data-required />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="tel" class="col-sm-1 control-label">@ViewBag.LabelTelNbr</label>
+                    <div class="col-sm-3">
+                        <input type="text" class="form-control" data-field="TelNbr" id="tel" @Html.Raw(siteMast == null ? "" : " value=\"" + siteMast.TelNbr + "\"") />
+                    </div>
+                    <label for="name2" class="col-sm-2 control-label">@ViewBag.LabelNameEn</label>
+                    <div class="col-sm-4">
+                        <input type="text" class="form-control" data-field="NameEn" id="name2" @Html.Raw(siteMast == null ? "" : " value=\"" + siteMast.NameEn + "\"") data-required />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="address" class="col-sm-1 control-label">@ViewBag.LabelAddress</label>
+                    <div class="col-sm-6">
+                        <input type="text" class="form-control" data-field="Address" id="address" @Html.Raw(siteMast == null ? "" : " value=\"" + siteMast.Address + "\"") />
+                    </div>
+                    <label for="pcode" class="col-sm-1 control-label">@ViewBag.LabelPostCode</label>
+                    <div class="col-sm-3">
+                        <input type="text" class="form-control" data-field="PostCode" id="pcode" @Html.Raw(siteMast == null ? "" : " value=\"" + siteMast.PostCode + "\"") />
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">@ViewBag.LabelClose</button>
+            <button type="button" id="detailSave" class="btn btn-primary">@ViewBag.LabelSave</button>
+        </div>
+    </div>
+</div>
+<script>
+    $(function () {
+        $('#detailSave').on('click', function () {
+            var checked = true;
+            //检查所有input标签中data-required必选项值是否为空
+            $('#SiteDetail input[data-required]').each(function () {
+                if ($.trim($(this).val()) == '') {
+                    $(this).parent('div').addClass('has-error');
+                    checked = false;
+                }
+            });
+            if (!checked) return;
+            var jsonBuilder = new StringBuilder();
+            $('#SiteDetail input[data-field]').each(function () {
+                if (jsonBuilder.length() > 0) jsonBuilder.append(',');
+                jsonBuilder.append("\"" + $(this).attr('data-field') + "\":\"");
+                jsonBuilder.append($.jsonCheck($(this).val()) + "\"");
+            });
+            $('#SiteDetail select[data-field]').each(function () {
+                if (jsonBuilder.length() > 0) jsonBuilder.append(',');
+                jsonBuilder.append("\"" + $(this).attr('data-field') + "\":\"" + $(this).children('option:selected').val() + "\"");
+            });
+            if (jsonBuilder.length() > 0) {
+                jsonBuilder.append("}").insert(0, "{");
+                $('#SiteDetail button').prop('disabled', true);
+                actionRequest.post({
+                    url: '@Url.Content("~/api/SEMIApi/EditSite/" + ViewBag.Language)',
+                    postData: $.parseJSON(jsonBuilder.toString()),
+                    success: function (response) {
+                        if (response !== undefined && response !== null && response.Status == 'ok') {
+                            $('#commonModal').modal('hide');
+                            Site.search();
+                        }
+                        else {
+                            $('#SiteDetail button').prop('disabled', false);
+                            $('#alertModal .modal-body').html('<p><strong>'
+                               + (response === undefined || response === null ? "Server error" : response.Msg) + '</strong></p>');
+                            $('#alertModal').modal('show');
+                        }
+                    },
+                    error: function (msg) {
+                        $('#alertModal .modal-body').html('<p><strong>' + msg + '</strong></p>');
+                        $('#alertModal').modal('show');
+                        $('#SiteDetail button').prop('disabled', false);
+                    }
+                });
+            }
+        });
+        $("#SiteDetail input[data-required]").attr('placeholder', '@ViewBag.LabelRequired').on('focus', function () {
+            $(this).parent('div').removeClass('has-error');
+        });
+        $('#tel').inputmask({ mask: ["999[9] 99999999 [9999]"] });
+        $('#pcode').inputmask({ mask: ["999999[99]"] });
+    });
+</script>
+

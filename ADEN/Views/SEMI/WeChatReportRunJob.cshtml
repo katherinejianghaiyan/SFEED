@@ -1,0 +1,59 @@
+﻿<div class="modal-dialog modal-lg" id="WeChatReportRun">
+    <div class="modal-content">
+        <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+            <h4 class="modal-title">@ViewBag.LabelRun</h4>
+        </div>
+        <div class="modal-body">
+            <div class="form-horizontal">
+                <input type="hidden" id="jobId" value="@ViewBag.ID" />
+                <div class="form-group">
+                    <label for="code" class="col-sm-2 control-label">@ViewBag.LabelReceiver</label>
+                    <div class="col-sm-3">
+                        <input type="text" class="form-control" id="empId" placeholder="Employee ID"/>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-sm-12">
+                        <textarea id="resultSqls" class="form-control blocked" rows="7"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">@ViewBag.LabelClose</button>
+            <button type="button" id="send" class="btn btn-primary">@ViewBag.LabelSend</button>
+        </div>
+    </div>
+</div>
+<script>
+    $(function () {
+        $('#send').on('click', function () {
+            var json = '{"JobID":"' + $('#jobId').val() + '","EmployeeID":"' + $('#empId').val() + '"}';
+            $('#WeChatReportRun button').prop('disabled', true);
+            actionRequest.post({
+                url: '@Url.Content("~/api/SEMIApi/WeChatReportRunJob/" + ViewBag.Language)',
+                postData: $.parseJSON(json),
+                success: function (response) {
+                    $('#WeChatReportRun button').prop('disabled', false);
+                    if (response !== undefined && response !== null && response.Status == 'ok') {
+                        $('#resultSqls').text(response.Msg);
+                        //$('#commonModal').modal('hide');
+                    }
+                    else {
+                        $('#alertModal .modal-body').html('<p><strong>'
+                           + (response === undefined || response === null ? "Server error" : response.Msg) + '</strong></p>');
+                        $('#alertModal').modal('show');
+                    }
+                },
+                error: function (msg) {
+                    $('#alertModal .modal-body').html('<p><strong>' + msg + '</strong></p>');
+                    $('#alertModal').modal('show');
+                    $('#WeChatReportRun button').prop('disabled', false);
+                }
+            });
+        });
+    });
+</script>

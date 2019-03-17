@@ -1,0 +1,105 @@
+﻿@section scripts {
+    <script>
+        $(function () {
+            $('#user').focus();
+            //加载Ajax请求对象
+            var createRequest = ApiRequest();
+            //创建Ajax请求实例
+            var request = new createRequest();
+            //用户更改语言选择,重新跳转页面
+            $('#languageSelect').on('change', function () {
+                location.href = "@Url.Content("~/SEMI/Login/")" + $(this).children('option:selected').val();
+            });
+            //点击登录按钮,进行验证检查
+            $('#login').on('click', function () {
+                var usr = $('#user').val();
+                if (usr === '') {
+                    $('#user').attr('data-content', '@ViewBag.AlertUserID');
+                    $('#user').popover('show');
+                }
+                else {
+                    var psw = $('#password').val();
+                    if (psw === '') {
+                        $('#password').attr('data-content', '@ViewBag.AlertPassword');
+                        $('#password').popover('show');
+                    }
+                    else {
+                        var l = Ladda.create($(this)[0]); l.start();
+                        $('#user').prop('readonly', true);
+                        $('#password').prop('readonly', true);
+                        request.post({
+                            url: '@Url.Content("~/api/SEMIApi/GetUserKey")',
+                            postData: {
+                                UserID: usr,
+                                Password: psw
+                            },
+                            success: function (response) {
+                                if (response.Status === 'ok') {
+                                    $('#userKey').val(response.Key);
+                                    $('#loginForm').submit();
+                                }
+                                else {
+                                    $('#user').attr('data-content', '@ViewBag.AlertUserIDPassword');
+                                    $('#user').popover('show');
+                                    l.stop();
+                                    $('#user').prop('readonly', false);
+                                    $('#password').prop('readonly', false);
+                                }
+                            },
+                            error: function (msg) {
+                                $('#user').attr('data-content', '@ViewBag.AlertAjaxError');
+                                $('#user').popover('show');
+                                l.stop();
+                                $('#user').prop('readonly', false);
+                                $('#password').prop('readonly', false);
+                            }
+                        });
+                    }
+                }
+            });
+            //用户聚焦输入框后,提示信息清除
+            $('input.form-control').on('focus', function () {
+                $(this).attr('data-content', '');
+                $(this).popover('hide');
+            });
+            //捕捉密码输入框keydown事件,回车聚焦登录按钮
+            $('#password').on('keydown', function (event) {
+                if (event.keyCode === 13) $('#login').click();
+            });
+        });
+    </script>
+}
+
+<div class="login-box">
+    <div class="login-logo">
+        <a href="http://www.adenservices.com" style="color:#b82837">ADEN Services</a>
+    </div>
+    <div class="login-box-body">
+        <p class="login-box-msg">@ViewBag.LabelAdmin</p>
+        <form action="@Url.Content("~/SEMI/Main/" + ViewBag.Language)" id="loginForm" method="post">
+            <input type="hidden" id="userKey" name="userKey" value="" />
+            <div class="form-group has-feedback">
+                <input type="text" id="user" data-placement="left" data-trigger="manual" class="form-control" placeholder="@ViewBag.LabelUserID">
+                <span class="glyphicon glyphicon-user form-control-feedback"></span>
+            </div>
+            <div class="form-group has-feedback">
+                <input type="password" id="password" data-placement="left" data-trigger="manual" class="form-control" placeholder="@ViewBag.LabelPassword">
+                <span class="glyphicon glyphicon-lock form-control-feedback"></span>
+            </div>
+            <div class="row">
+                <div class="col-xs-5">
+                    <select class="form-control" id="languageSelect" name="language">
+                        @Html.Raw(@ViewBag.LanguageOptions)
+                    </select>
+                </div>
+                <div class="col-xs-3"></div>
+                <div class="col-xs-4">
+                    <button type="button" id="login" class="btn btn-primary btn-block btn-flat ladda-button" data-style="zoom-out">
+                        <span class="ladda-label">@ViewBag.LabelLogin</span>
+                    </button>
+                </div>
+            </div>
+        </form>
+        <br><a href="#">@ViewBag.LabelForgotPassword</a>
+    </div>
+</div>

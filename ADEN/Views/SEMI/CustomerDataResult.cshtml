@@ -1,0 +1,44 @@
+﻿@using Model.CustomerData
+@{
+    CustomerDataLog log = ViewBag.Log;
+}
+<div class="modal-dialog modal-sm" id="CustomerDataDetail">
+    <div class="modal-content">
+        <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+            <h4 class="modal-title">@(log == null ? ViewBag.LabelNoData : log.CreateDate)</h4>
+        </div>
+        <div class="modal-body">
+            @if (log != null && !string.IsNullOrWhiteSpace(log.FileName))
+            {
+                <div class="row">
+                    <div class="col-sm-4"></div>
+                    <div class="col-sm-4">
+                        <button type="button" class="btn btn-primary" id="export">@ViewBag.LabelExport</button>
+                        <input type="hidden" id="path" value="@log.FileName" />
+                    </div>
+                </div>
+
+            }
+            else
+            {
+                <div class="alert alert-success fade in">
+                    <strong>@ViewBag.LabelNoData</strong>
+                </div>
+            }
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">@ViewBag.LabelClose</button>
+        </div>
+    </div>
+</div>
+<script>
+    $(function () {
+        $('#export').on('click', function () {
+            var url = '@Url.Content("~/SEMI/DownloadExcelData/" + ViewBag.Language)' + '/?link=' + $('#path').val();
+            $([url]).multiDownload({ source: "server" });
+        });
+    });
+</script>

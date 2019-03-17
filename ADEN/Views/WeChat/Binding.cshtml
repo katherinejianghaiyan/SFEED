@@ -1,0 +1,113 @@
+﻿@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width" />
+    <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport" />
+    <title>公众号用户绑定</title>
+    <link rel="shortcut icon" href="@Url.Content("~/favicon.ico")" />
+    <link href="~/AdminLTE/bootstrap/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="~/AdminLTE/bootstrap/css/ladda-themeless.min.css" rel="stylesheet" />  
+    <style>
+        body{
+            background-color: lightgrey;
+        }
+        .form-binding{
+             max-width: 330px;
+             padding: 15px;
+             margin: 0 auto;
+        }
+        .form-binding input{
+            margin-top: 10px;
+            margin-bottom: 10px;
+        }
+        .form-binding .heading{
+            text-align:center;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="alert alert-warning alert-dismissible" role="alert" style="margin:10px;margin-top:20px;display:none" id="message">
+            <h4 style="text-align:center">@(ViewBag.Message == "error" ? "用户信息错误,请绑定用户" : "")</h4>
+        </div>
+        <div class="form-binding">
+            <h2 class="heading">用户绑定</h2>
+            <input type="text" class="form-control" data-placement="bottom" data-trigger="manual" placeholder="姓名(必须)" id="usrName" autofocus>
+            <input type="text" class="form-control" placeholder="员工号" id="employeeNumber">
+            <button class="btn btn-lg btn-primary btn-block btn-flat ladda-button" data-style="zoom-out" id="submit">
+                <span class="ladda-label">确定</span>
+            </button>
+        </div>
+    </div>
+    <script src="~/AdminLTE/plugins/jQuery/jQuery-2.2.0.min.js"></script>
+    <script src="~/AdminLTE/bootstrap/js/bootstrap.min.js"></script>
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <script src="~/AdminLTE/bootstrap/js/ie10-viewport-bug-workaround.js"></script>
+    <script src="~/AdminLTE/bootstrap/js/spin.min.js"></script>
+    <script src="~/AdminLTE/bootstrap/js/ladda.min.js"></script>
+    <script src="~/Scripts/Ajax.js"></script>
+    <script>
+    $(function () {
+        var createRequest = ApiRequest(); //加载Ajax请求对象
+
+        var request = new createRequest();//创建Ajax请求实例
+
+        if ($('#message h4').html() != '') $('#message').show();
+        $('#submit').on('click', function () {
+            $('#message').hide();
+            var usrName = $('#usrName').val();
+            if (usrName === '') {
+                $('#usrName').attr('data-content', '请输入姓名');
+                $('#usrName').popover('show');
+            }
+            else {
+                var l = Ladda.create($(this)[0]);
+                l.start();
+                $('#usrName').prop('readonly', true);
+                $('#employeeNumber').prop('readonly', true);
+                request.post({
+                    url: '@Url.Content("~/api/WeChatApi/BindPerson")',
+                        postData: {
+                            Token: 'adenservices',
+                            Name: $('#usrName').val(),
+                            EmployeeID: $('#employeeNumber').val(),
+                            WeChatID: '@ViewBag.OpenID'
+                        },
+                        success: function (response) {
+                            l.stop();
+                            if (response.Status === 'ok') {
+                                location.href = "@Url.Content("~/WeChat/Pic/")" + "?key=" + response.Msg;
+                            }
+                            else {
+                                $('#message h4').html(response.Msg);
+                                $('#message').show();
+                            }
+                        },
+                        error: function (msg) {
+                            l.stop();
+                            alert("网络或服务器错误,请联系公司!");
+                        },
+                        complete: function (xhr) {
+                            $('#usrName').prop('readonly', false);
+                            $('#employeeNumber').prop('readonly', false);
+                        }
+                    });
+                }
+            });
+
+            $('input.form-control').on('focus', function () {
+                $(this).attr('data-content', '');
+                $(this).popover('hide');
+            });
+        });
+    </script>
+</body>
+</html>

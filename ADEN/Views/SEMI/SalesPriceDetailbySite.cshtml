@@ -1,0 +1,186 @@
+﻿@{
+    int RecordID = ViewBag.RecordID;
+}
+<div class="modal-dialog modal-lg" id="SPL">
+    <div class="modal-content">
+        <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+            <h4 class="modal-title">@(RecordID.Equals(0) ? ViewBag.LabelNew : ViewBag.LabelEdit + " - " + ViewBag.ItemCode + " / " + ViewBag.ItemName)</h4>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" data-field="RecordID" value="@RecordID" />
+            <input type="hidden" data-field="SiteGuid" value="@ViewBag.SiteGuid" />
+            <div class="form-horizontal">
+                @if (RecordID.Equals(0))
+                {
+                    <div class="form-group">
+                        <label for="classcode" class="col-sm-2 control-label">@ViewBag.LabelItem</label>
+                        <div class="col-sm-2">
+                            <input type="text" class="form-control" data-field="ItemGuid" data-value-alias="guid" id="code" data-required />
+                        </div>
+                        <div class="col-sm-4">
+                            <input type="text" class="form-control" tabindex="-1" id="name" readonly />
+                        </div>
+                    </div>
+                }
+                <div class="form-group">
+                    <label for="price" class="col-sm-2 control-label">@ViewBag.LabelPrice</label>
+                    <div class="col-sm-2 has-feedback">
+                        <input type="text" class="form-control" data-field="Price" id="price" value="@ViewBag.Price" data-required />
+                        <span class="fa fa-rmb form-control-feedback"></span>
+                    </div>
+                    <label for="sdate" class="col-sm-2 control-label">@ViewBag.LabelStartDate</label>
+                    <div class="col-sm-2">
+                        <input type="text" class="form-control" data-field="startDate" id="sdate" @Html.Raw(RecordID.Equals(0) ? "" : "disabled") value="@ViewBag.SDate" data-required />
+                    </div>
+                    <label for="edate" class="col-sm-2 control-label">@ViewBag.LabelEndDate</label>
+                    <div class="col-sm-2">
+                        <input type="text" class="form-control" data-field="endDate" id="edate" value="@ViewBag.EDate" data-required />
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">@ViewBag.LabelClose</button>
+            @if (!RecordID.Equals(0))
+            {
+                @*<button type="button" id="detailDel" class="btn btn-danger">@ViewBag.LabelDelete</button>*@
+            }
+            <button type="button" id="detailSave" class="btn btn-primary">@ViewBag.LabelSave</button>
+        </div>
+    </div>
+</div>
+<script>
+    var ajaxEdit = function (json) {
+        $('#SPL button').prop('disabled', true);
+        actionRequest.post({
+            url: '@Url.Content("~/api/SEMIApi/EditSalesPrice/" + ViewBag.Language)',
+            postData: $.parseJSON(json),
+            success: function (response) {
+                if (response !== undefined && response !== null && response.Status == 'ok') {
+                    $('#commonModal').modal('hide');
+                    $('#searchKey').val(response.Msg);
+                    SPL.search();
+                }
+                else {
+                    $('#SPL button').prop('disabled', false);
+                    $('#alertModal .modal-body').html('<p><strong>'
+                        + (response === undefined || response === null ? "Server error" : response.Msg) + '</strong></p>');
+                    $('#alertModal').modal('show');
+                }
+            },
+            error: function (msg) {
+                $('#alertModal .modal-body').html('<p><strong>' + msg + '</strong></p>');
+                $('#alertModal').modal('show');
+                $('#SPL button').prop('disabled', false);
+            }
+        });
+    };
+    $(function () {
+        $('#detailDel').on('click', function () {
+            ajaxEdit("{\"IsDel\":\"1\", \"RecordID\":\"@RecordID\"}");
+        });
+        $('#detailSave').on('click', function () {
+            var checked = true;
+            //检查所有input标签中data-required必选项值是否为空
+            $('#SPL input[data-required]').each(function () {
+                if ($.trim($(this).val()) == '') {
+                    $(this).parent('div').addClass('has-error');
+                    checked = false;
+                }
+            });
+            if (!checked) return;
+            var jsonBuilder = new StringBuilder();
+            $('#SPL input[data-field]').each(function () {
+                if (jsonBuilder.length() > 0) jsonBuilder.append(',');
+                jsonBuilder.append("\"" + $(this).attr('data-field') + "\":\"");
+                if ($(this).attr('data-value-alias') == undefined) jsonBuilder.append($.jsonCheck($(this).val()) + "\"");
+                else {
+                    var aliasVal = $(this).attr('data-' + $(this).attr('data-value-alias'));
+                    if (aliasVal == undefined) aliasVal = '';
+                    jsonBuilder.append($.jsonCheck(aliasVal) + "\"");
+                }
+            });
+            if (jsonBuilder.length() > 0) {
+                jsonBuilder.insert(0, '{').append('}');
+                ajaxEdit(jsonBuilder.toString());
+            }
+        });
+        $('#sdate').datepicker({
+            autoclose: true,
+            format: '@(ViewBag.Language == "zh" ? "yyyy-mm-dd" : "mm/dd/yyyy")',
+            todayHighlight: true,
+            language: '@(ViewBag.Language == "zh" ? "zh-CN" : "")',
+            startDate: '@(RecordID.Equals(0) ? "" : ViewBag.SDate)'
+        });
+        $('#edate').datepicker({
+            autoclose: true,
+            format: '@(ViewBag.Language == "zh" ? "yyyy-mm-dd" : "mm/dd/yyyy")',
+            todayHighlight: true,
+            language: '@(ViewBag.Language == "zh" ? "zh-CN" : "")',
+            startDate: '@ViewBag.SDate'
+        });
+
+        $("#SPL input[data-required]").attr('placeholder', '@ViewBag.LabelRequired').on('focus', function () {
+            $(this).parent('div').removeClass('has-error');
+        });
+
+        $("#price").inputmask("decimal", { allowMinus: false, digits: 4 });
+
+        var typeSource = null;
+        $('#code').typeahead({
+            source: function (query, process) {
+                if (typeSource == undefined || typeSource == null) {
+                    actionRequest.post({
+                        url: '@Url.Content("~/api/SEMIApi/GetFGDatas/" + ViewBag.Language)',
+                        postData: {
+                            Status: 1,
+                            Type: 'FG'
+                        },
+                        success: function (data) {
+                            typeSource = data;
+                            process(typeSource);
+                        }
+                    });
+                }
+                else process(typeSource);
+            },
+            autoSelect: true,
+            matcher: function (item) {
+                if (this.query == undefined || this.query == '') return false;
+                if (item.ItemCode.toLocaleLowerCase().indexOf(this.query.toLocaleLowerCase()) > -1
+                    || (item.ItemName + item.ItemName_CN + item.ItemName_EN).toLocaleLowerCase().indexOf(this.query.toLocaleLowerCase()) > -1)
+                    return true;
+                else return false;
+            },
+            displayText: function (item) {
+                return item.ItemGuid;
+            },
+            highlighter: function (text, item) {
+                return item.ItemName_CN;
+            },
+            updater: function (item) {
+                $('#name').val(item.ItemName_CN);
+                $('#code').attr('data-guid', item.ItemGuid);
+                return item.ItemCode;
+            },
+            delay: 200
+        });
+        $('#code').change(function () {
+            var current = $('#code').typeahead("getActive");
+            if (current) {
+                if (current.ItemCode != $('#code').val()) {
+                    $('#code,#name').val('');
+                    $('#code').attr('data-guid', '');
+                }
+            }
+            else {
+                $('#code,#name').val('');
+                $('#code').attr('data-guid', '');
+            }
+        });
+    });
+</script>

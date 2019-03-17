@@ -1,0 +1,85 @@
+﻿@using Model.Order
+@{
+    List<SaleLine> order = ViewBag.Order;
+}
+<div class="modal-dialog modal-lg">
+    <div class="modal-content">
+        <div class="modal-header">
+            <p style="font-size:26px">@ViewBag.LabelOrderDelivery</p>
+
+            <table>
+                <tr>
+                    <td style="font-size:20px">@ViewBag.LabelRequireDate<label>:</label></td>
+                    <td style="font-size:20px">@ViewBag.orderDate</td>
+                </tr>
+            </table>
+        </div>
+        <div class="modal-body">
+            <table id="SalesOrderDetail">
+                <thead>
+                    <tr>
+
+                        <th style="text-align:center;font-size:26px">@ViewBag.LabelOrderNumber</th>
+                        <th style="text-align:center;font-size:26px">@ViewBag.LabelUserName</th>
+                        @*<th style="text-align:center;font-size:26px">@ViewBag.LabelRequireDate</th>*@
+                        <th name="head">@ViewBag.LabelCode</th>
+                        <th name="head">@ViewBag.LabelDescription</th>
+                        <th name="head">@ViewBag.LabelDescription_EN</th>
+                        <th name="head">@ViewBag.LabelClassName</th>
+                        <th name="head">@ViewBag.LabelQty</th>
+                        <th name="head">@ViewBag.LabelUnit</th>
+                        <th name="head">@ViewBag.LabelCheck</th>
+
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (SaleLine line in order)
+                    {
+                        <tr>
+                            <td id="socode">@line.OrderCode</td>
+                            <td id="username">@line.UserName</td>
+                            @*<td id="date">@line.RequiredDate</td>*@
+                            <td id="itemcode">@line.ItemCode</td>
+                            <td id="itemname">@line.ItemName_CN</td>
+                            <td id="itemname_EN">@line.ItemName_EN</td>
+                            <td id="class">@line.ClassName</td>
+                            <td id="qty">@line.Qty</td>
+                            <td id="UOM">@line.UOMName</td>
+                            <td id="check"></td>
+                        </tr>
+                    }
+
+                </tbody>
+            </table>
+
+        </div>
+        <br />
+        <div class="modal-footer">
+            <button type="button" style="background-color:white;border:none" data-dismiss="modal">@ViewBag.LabelClose</button>
+        </div>
+    </div>
+</div>
+<script>
+    $(function () {
+        $('#SalesOrderDetail th[name="head"],#itemcode,#itemname,#itemname_EN,#class,#qty,#UOM').css('border', '1px solid').css('font-size', '26px');
+        $('#socode,#username,#date').css('font-size', '26px').css('text-align', 'center').css('background-color', 'white');
+
+        $('#SalesOrderDetail tbody tr td').each(function () {
+            if ($(this).html() != "")
+            {
+                $(this).css('border-top', '1px solid').css('font-size', '26px').css('text-align', 'center');
+                $(this).parent('tr').children('td').eq(8).css('border-bottom', '1px solid').html('');
+            }
+        });
+        $('#SalesOrderDetail th,#SalesOrderDetail td').css('height', '80px');
+
+    });
+</script>
+<style type="text/css">
+    #SalesOrderDetail {
+        width: 95%;
+        border: 1px solid;
+        border-collapse: collapse;
+        margin: 0,auto;
+    }
+</style>

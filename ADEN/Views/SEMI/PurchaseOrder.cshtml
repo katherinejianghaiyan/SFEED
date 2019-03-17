@@ -1,0 +1,138 @@
+﻿@using Model.Site;
+@{
+    List<SiteMast> siteList = ViewBag.SiteList;
+}
+<div class="row">
+    <div class="col-xs-12">
+        <div class="box">
+            <div class="box-body">
+                <div class="col-lg-12 col-sm-12 form-horizontal form-group">
+                    <div class="col-lg-3 col-sm-3">
+                        <select class="form-control" id="site">
+                            @foreach (SiteMast site in siteList)
+                            {
+                                <option value="@site.SiteGuid">@Html.Raw(site.SiteCode + "/" + site.SiteName)</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-lg-3 col-sm-3">
+                        <div class="input-group">
+                            <span class="input-group-addon"><i class="fa fa-calendar"></i></span>
+                            <input type="text" class="form-control" id="orderDate" @Html.Raw(ViewBag.Language == "zh" ? " value=\"" + DateTime.Now.ToString("yyyy-MM-dd") + "\" placeholder=\"yyyy-mm-dd\"" : " value=\"" + DateTime.Now.ToString("MM/dd/yyyy") + "\" placeholder=\"mm/dd/yyyy\"") />
+                            <span class="input-group-btn">
+                                <button type="button" class="btn btn-primary ladda-button" data-style="zoom-out" id="query" onclick="Order.search()">@ViewBag.LabelQuery</button>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <table id="purchaseOrder" class="table dataTable">
+                    <thead>
+                        <tr>                  
+                            <th>@ViewBag.LabelOrderNumber</th>
+                            <th>@ViewBag.LabelSupplier</th>
+                            <th>@ViewBag.LabelOrderDate</th>
+                            <th>@ViewBag.LabelOrderAmt</th>
+                            <th>@ViewBag.LabelDetail</th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    var Order = {
+        tbl: null,
+        clear: function () {
+            if (Order.tbl != undefined && Order.tbl != null) {
+                Order.tbl.clear();
+                Order.tbl.draw();
+            }
+        },
+        search: function () {
+            if (Order.tbl === null) {
+                Order.tbl = $('#purchaseOrder').DataTable({
+                    searching: false,
+                    lengthMenu: [[10, 15, 30, -1], [10, 15, 30, "ALL"]],
+                    dom: 'rt<"bottom"iflp<"clear">>',
+                    processing: true,
+                    stateSave: false,
+                    deferRender: true,
+                    language: {
+                        "processing": "@ViewBag.LabelLoading",
+                        "zeroRecords": "@ViewBag.LabelNoData",
+                        "lengthMenu": "@ViewBag.LabelLengthMenu",
+                        "info": "@ViewBag.LabelTableInfo",
+                        "infoEmpty": "@ViewBag.LabelTableInfoEmpty",
+                        "paginate": {
+                            "first": "@ViewBag.LabelFirstPage",
+                            "previous": "@ViewBag.LabelPreviousPage",
+                            "next": "@ViewBag.LabelNextPage",
+                            "last": "@ViewBag.LabelLastPage"
+                        }
+                    },
+                    ajax: {
+                        "url": '@Url.Content("~/api/SEMIApi/GetTablePODatas/" + ViewBag.Language)',
+                        "type": "POST",
+                        "data": function (d) {
+                            d.SiteGuid = $('#site').children('option:selected').val(),
+                            d.OrderDate = $('#orderDate').val()
+                        }
+                    },
+                    columns: [
+                        { data: "OrderCode" },
+                        { data: "SupplierName" },
+                        { data: "OrderDate" },
+                        { data: "OrderAmt" }
+                    ],
+                    columnDefs: [{
+                        targets: 4,
+                        data: null,
+                        defaultContent: '<button class="btn btn-primary btn-xs ladda-button" data-style="zoom-out">'
+                            + '<i class="fa fa-list-ol"></i></button>'
+                    }]
+                });
+                $('#purchaseOrder tbody').on('click', 'button', function () {
+                    var data = Order.tbl.row($(this).parents('tr')).data();
+                    Order.detail($(this)[0], data);
+                });
+            }
+            else Order.tbl.ajax.reload();
+        },
+        detail: function (o, data) {
+            if (action) return;
+            else {
+                action = true;
+                $('#commonModal').html('');
+            }
+            var l = Ladda.create(o);
+            l.start();
+            actionRequest.post({
+                url: '@Url.Content("~/SEMI/PurchaseOrderDetail/" + ViewBag.Language)',
+                postData: {
+                    HeadGUID: data === undefined || data === null ? '' : data.OrderGuid
+                },
+                dataType: 'html',
+                success: function (response) {
+                    $('#commonModal').html(response);
+                    $('#commonModal').modal('show');
+                },
+                complete: function (xHR) {
+                    action = false;
+                    l.stop();
+                }
+            });
+        }
+    };
+    $(function () {
+        $('#orderDate,#site').on('change', function () {
+            Order.clear();
+        });
+        $('#orderDate').datepicker({
+            autoclose: true,
+            format: '@(ViewBag.Language == "zh" ? "yyyy-mm-dd" : "mm/dd/yyyy")',
+            todayHighlight: true,
+            language: '@(ViewBag.Language == "zh" ? "zh-CN" : "")'
+        });
+    });
+</script>

@@ -1,0 +1,260 @@
+﻿@using Model.Site;
+@using Model.Supplier;
+@{
+    List<SiteMast> siteList = ViewBag.SiteList;
+}
+<div class="row">
+    <div class="col-xs-12">
+        <div class="box">
+            <div class="box-body">
+                <div class="col-lg-12 col-sm-12 form-horizontal form-group">
+                    <div class="col-lg-3 col-sm-3">
+                        <select class="form-control" id="site">
+                            @foreach (SiteMast site in siteList)
+                            {
+                                <option value="@site.SiteGuid">@Html.Raw(site.SiteCode + "/" + site.SiteName)</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-lg-3 col-sm-3">
+                        <div class="input-group">
+                            <span class="input-group-addon"><i class="fa fa-calendar"></i></span>
+                            <input type="text" class="form-control" id="receiptDate" @Html.Raw(ViewBag.Language == "zh" ? " value=\"" + DateTime.Now.ToString("yyyy-MM-dd") + "\" placeholder=\"yyyy-mm-dd\"" : " value=\"" + DateTime.Now.ToString("MM/dd/yyyy") + "\" placeholder=\"mm/dd/yyyy\"") />
+                            <span class="input-group-btn">
+                                <button type="button" class="btn btn-primary ladda-button" data-style="zoom-out" id="query" onclick="Receipt.query(this)">@ViewBag.LabelQuery</button>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-sm-4">
+                        <div class="input-group">
+                            <select class="form-control" id="supplier"></select>
+                            <span class="input-group-btn">
+                                <button type="button" class="btn btn-warning ladda-button" data-style="zoom-out" id="display" onclick="Receipt.display(this)">@ViewBag.LabelDisplay</button>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col-lg-1 col-sm-1">
+                        <button type="button" class="btn btn-success ladda-button" data-style="zoom-out" onclick="Receipt.save(this)">@ViewBag.LabelSave</button>
+                    </div>
+                    <div class="col-lg-1 col-sm-1">
+                        <button type="button" class="btn btn-danger" onclick="Receipt.zero()">@ViewBag.LabelSetZero</button>
+                    </div>
+                </div>
+                <table id="orderDetail" class="table dataTable">
+                    <thead>
+                        <tr>
+                            <th>@ViewBag.LabelCode</th>
+                            <th>@ViewBag.LabelDescription</th>
+                            <th>@ViewBag.LabelDescription_EN</th>
+                            <th>@ViewBag.LabelSpec</th>
+                            <th>@ViewBag.LabelPrice</th>
+                            <th>@ViewBag.LabelUnit</th>
+                            <th>@ViewBag.LabelQty</th>
+                            <th>@ViewBag.LabelAmt</th>
+                            <th>@ViewBag.LabelReceiptQty</th>
+                            <th>@ViewBag.LabelReceiptAmt</th>
+                        </tr>
+                    </thead>
+                    <tfoot>
+                        <tr>
+                            <th colspan="8" style="text-align:right">@ViewBag.LabelTotalAmt</th>
+                            <th></th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    var Receipt = {
+        tbl: null,
+        clear: function () {
+            if (Receipt.tbl != undefined && Receipt.tbl != null) {
+                Receipt.tbl.clear();
+                Receipt.tbl.draw();
+            }
+        },
+        sum: function () {
+            if (Receipt.tbl != undefined && Receipt.tbl != null && Receipt.tbl.data().length > 0) {
+                var total = Receipt.tbl.column(8).data().reduce(function (a, b) {
+                    return a + b;
+                });
+                $(Receipt.tbl.column(8).footer()).html($.mathRound(total, 2));
+            }
+        },
+        zero: function () {
+            if (Receipt.tbl != undefined && Receipt.tbl != null && Receipt.tbl.data().length > 0) {
+                $('#orderDetail tbody input[data-required]').each(function () {
+                    $(this).val(0);
+                    Receipt.tbl.cell(Receipt.tbl.cell($(this).parent('td')).index().row, 8).data(0);
+                });
+                $(Receipt.tbl.column(8).footer()).html(0);
+            }
+        },
+        save: function (btn) {
+            if (Receipt.tbl === undefined || Receipt.tbl === null || Receipt.tbl.data().length === 0) return;
+            $('#confirmModal .modal-body').html('收货总金额:<strong>' + $(Receipt.tbl.column(8).footer()).html() + '</strong>');
+            $('#confirmModal').modal('show').one('click', 'button[data-action=yes]', function () {
+                var l = Ladda.create(btn);
+                l.start();
+                var data = [];
+                $('#orderDetail tbody input[data-required]').each(function () {
+                    var rdata = Receipt.tbl.row($(this).parents('tr')).data();
+                    data.push({
+                        LineGuid: rdata.LineGuid,
+                        ReceiptQty: $(this).val()
+                    });
+                });
+                actionRequest.post({
+                    url: '@Url.Content("~/api/SEMIApi/ProcessReceiptMastDatas/" + @ViewBag.Language)',
+                    postData: { data: data, user: '@ViewBag.UserID' },
+                    success: function (data) {
+                        if (data == undefined || data == null) {
+                            $('#alertModal .modal-body').html('<p><strong>服务器没有响应,请刷新重试</strong></p>');
+                        }
+                        else {
+                            if (data.Status === 'ok') {
+                                $('#alertModal .modal-body').html('<p><strong>数据保存成功</strong></p>');
+                            }
+                            else {
+                                $('#alertModal .modal-body').html('<p><strong>数据处理异常,请刷新重试</strong></p>');
+                            }
+                        }
+                        Receipt.clear();
+                        $('#alertModal').modal('show');
+                    },
+                    error: function (msg) {
+                        $('#alertModal .modal-body').html('<p><strong>' + msg + '</strong></p>');
+                        $('#alertModal').modal('show');
+                    },
+                    complete: function (xHR) {
+                        l.stop();
+                    }
+                });
+            });
+        },
+        display: function (btn) {
+            var supplier = $('#supplier').children('option:selected').val();
+            if (supplier === undefined || supplier === null || supplier === '') return;
+            var l = Ladda.create(btn);
+            l.start();
+            if (Receipt.tbl === null) {
+                Receipt.tbl = $('#orderDetail').DataTable({
+                    searching: false,
+                    paging: false,
+                    info: false,
+                    lengthChange: false,
+                    scrollY: '400px',
+                    processing: true,
+                    stateSave: false,
+                    deferRender: true,
+                    language: {
+                        processing: "@ViewBag.LabelLoading",
+                        zeroRecords: "@ViewBag.LabelNoData"
+                    },
+                    columns: [
+                        { data: "ItemCode" },
+                        { data: "ItemName_CN" },
+                        { data: "ItemName_EN" },
+                        { data: "ItemSpec" },
+                        { data: "Price" },
+                        { data: "Unit" },
+                        { data: "Qty" },
+                        { data: "Amt" },
+                        { data: "ReceiptQty" },
+                        { data: "ReceiptAmt" }
+                    ],
+                    columnDefs: [{
+                        targets: 8,
+                        render: function (data, type, row, meta) {
+                            return '<input type="text" data-required class="col-xs-5" value="' + data + '" />';
+                        }
+                    }, {
+                        targets: 9,
+                        render: function (data, type, row, meta) {
+                            return '<strong>' + data + '</strong>';
+                        }
+                    }],
+                    ajax: {
+                        "url": '@Url.Content("~/api/SEMIApi/GetTableReceiptMastDatas/" + @ViewBag.Language)',
+                        "type": "POST",
+                        "data": function (d) {
+                            d.SiteGuid = $('#site').children('option:selected').val();
+                            d.ReceiptDate = $('#receiptDate').val();
+                            d.SupplierGuid = supplier;
+                        }
+                    }
+                }).on('mouseover', 'tbody tr', function () {
+                    $(Receipt.tbl.row(this).nodes()).addClass('highlight');
+                }).on('mouseleave', 'tbody tr', function () {
+                    $(Receipt.tbl.row(this).nodes()).removeClass('highlight');
+                }).on('draw.dt', function () {
+                    $('tbody input[data-required]').inputmask("decimal", { allowMinus: false, digits: 3 }).on('change', function () {
+                        var rdata = Receipt.tbl.row($(this).parents('tr')).data();
+                        var v = $.mathRound(rdata.Price * $(this).val(), 2);
+                        Receipt.tbl.cell(Receipt.tbl.cell($(this).parent('td')).index().row, 8).data(v);
+                        Receipt.sum();
+                    });
+                    Receipt.sum();
+                    l.stop();
+                });
+            }
+            else Receipt.tbl.ajax.reload();
+        },
+        query: function (btn) {
+            if (action) return;
+            else {
+                action = true;
+                $('#supplier').html('');
+            }
+            var l = Ladda.create(btn);
+            l.start();
+            actionRequest.post({
+                url: '@Url.Content("~/api/SEMIApi/GetReceiptSupplierList/" + @ViewBag.Language)',
+                postData: {
+                    SiteGuid: $('#site').children('option:selected').val(),
+                    ReceiptDate: $('#receiptDate').val()
+                },
+                success: function (datas) {
+                    if (datas == undefined || datas == null) {
+                        $('#alertModal .modal-body').html('<p><strong>@ViewBag.LabelNoReceipt</strong></p>');
+                        $('#alertModal').modal('show');
+                    }
+                    else {
+                        $.each(datas, function (i, data) {
+                            $('#supplier').append('<option value="' + data.SupplierGuid
+                                + '">' + data.SupplierCode + '/' + data.SupplierName + '</option>');
+                        });
+                    }
+                },
+                error: function (msg) {
+                    $('#alertModal .modal-body').html('<p><strong>' + msg + '<strong></p>');
+                    $('#alertModal').modal('show');
+                },
+                complete: function (xHR) {
+                    action = false;
+                    l.stop();
+                }
+            });
+        }
+    };
+    $(function () {
+        $('#receiptDate').on('change', function () {
+            $('#supplier').html('');
+            Receipt.clear();
+        }).datepicker({
+            autoclose: true,
+            format: '@(ViewBag.Language == "zh" ? "yyyy-mm-dd" : "mm/dd/yyyy")',
+            todayHighlight: true,
+            language: '@(ViewBag.Language == "zh" ? "zh-CN" : "")'
+        });
+        $('#site').on('change', function () {
+            $('#supplier').html('');
+            Receipt.clear();
+        });
+        $('#supplier').on('change', function () {
+            Receipt.clear();
+        });
+    });
+</script>

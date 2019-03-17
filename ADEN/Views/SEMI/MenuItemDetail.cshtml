@@ -1,0 +1,337 @@
+﻿@using Model.Item;
+@using Model.Dict;
+@{
+    FGMast item = ViewBag.ItemMast;
+    List<ItemClass> itemClasses = ViewBag.ItemClasses;
+    List<DictGroup> itemDicts = (List<DictGroup>)Model;
+    //List<DictDetail> itemDictDetails = null;
+    //int i = 0;
+}
+<div class="modal-dialog modal-lg" id="FGDetail">
+    <div class="modal-content">
+        <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+            <h4 class="modal-title">@(item == null ? ViewBag.LabelNew : ViewBag.LabelEdit)</h4>
+        </div>
+        <div class="modal-body">
+            <div class="nav-tabs-custom">
+                <ul class="nav nav-tabs">
+                    @if (ViewBag.ItemName_EN != "Picture of Chinese" && ViewBag.ItemName_EN != "Picture of English")
+                    {
+                        <li class="active"><a href="#mastTab" data-toggle="tab">@ViewBag.LabelMastData</a></li>
+                        <li><a href="#tipsTab" data-toggle="tab">@ViewBag.LabelIngredients</a></li>
+                    }
+                    @if (ViewBag.ItemName_EN == "Picture of English")
+                    {
+                        <li class="active"><a href="#pictureTab1" data-toggle="tab">@ViewBag.LabelPicture_en</a></li>
+                    }
+                    @if (ViewBag.ItemName_EN == "Picture of Chinese")
+                    {
+                        <li class="active"><a href="#pictureTab1" data-toggle="tab">@ViewBag.LabelPicture_zh</a></li>
+                    }
+                </ul>
+                <div class="tab-content">
+                    @if (ViewBag.ItemName_EN != "Picture of Chinese" && ViewBag.ItemName_EN != "Picture of English")
+                    {
+                        <div class="tab-pane active" id="mastTab">
+                            <div class="form-horizontal">
+                                <input type="hidden" data-field="ItemGuid" value="@(item == null ? "" : item.ItemGuid)" />
+                                <input type="hidden" data-field="langCode" value="@(item == null ? "" : item.langCode)" />
+                                <div>
+                                    <select class="form-control" id="ItemTips" data-field="ItemTips" style="width:120px">
+                                        <option value="Name" @Html.Raw(item == null ? "" : (item.ItemTips.Equals("Name") ? " selected" : ""))>多行菜单名</option>
+                                        <option value="ShortName" @Html.Raw(item == null ? "" : (item.ItemTips.Equals("ShortName") ? " selected" : ""))>单行菜单名</option>
+                                        <option value="AM" @Html.Raw(item == null ? "" : (item.ItemTips.Equals("AM") ? " selected" : ""))>AM</option>
+                                        <option value="PM" @Html.Raw(item == null ? "" : (item.ItemTips.Equals("PM") ? " selected" : ""))>PM</option>
+                                    </select>
+                                </div>
+                                <br>
+                                <div class="form-group">
+                                    <label for="iType" class="col-sm-1 control-label">@ViewBag.LabelBusinessType</label>
+                                    <div class="col-sm-2">
+                                        <input type="text" class="form-control" data-field="ItemType" id="iType" @Html.Raw(item == null ? " value=\""+ViewBag.SiteGuid+"\"" : " value=\"" + item.ItemType + "\"") @Html.Raw("disabled") data-required />
+                                    </div>
+                                    <label for="iname" class="col-sm-1 control-label">@ViewBag.LabelDescription</label>
+                                    <div class="col-sm-2">
+                                        <input type="text" class="form-control" data-field="ItemName_CN" id="iname" @Html.Raw(item == null ? "" : " value=\"" + item.ItemName_CN + "\"") data-required />
+                                    </div>
+                                    <label class="col-sm-1 control-label">@ViewBag.LabelDescription_EN</label>
+                                    <div class="col-sm-2">
+                                        <input type="text" class="form-control" data-field="ItemName_EN" id="iname" @Html.Raw(item == null ? "" : " value=\"" + item.ItemName_EN + "\"") data-required />
+                                    </div>
+                                    <label for="status" class="col-sm-1 control-label">@ViewBag.LabelStatus</label>
+                                    <div class="col-sm-2">
+                                        <select class="form-control" id="status" data-field="ItemStatus">
+                                            <option value="1" @Html.Raw(item == null ? "" : (item.ItemStatus.Equals(1) ? " selected" : ""))>@ViewBag.LabelStatusActive</option>
+                                            <option value="0" @Html.Raw(item == null ? "" : (item.ItemStatus.Equals(0) ? " selected" : ""))>@ViewBag.LabelStatusBlock</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="isort" class="col-sm-1 control-label">@ViewBag.LabelSort</label>
+                                    <div class="col-sm-2">
+                                        <input type="text" class="form-control" data-field="ItemSort" id="isort" @Html.Raw(item == null ? "" : " value=\"" + item.ItemSort + "\"") data-required />
+                                    </div>
+                                    <label for="iclassguid" class="col-sm-1 control-label">@ViewBag.LabelClassName</label>
+                                    <div class="col-sm-3">
+                                        <select class="form-control" id="iclassguid" data-field="ItemClassGuid" style="width:100px" data-required>
+                                            @foreach (ItemClass itemClass in itemClasses)
+                                            {
+                                                <option value="@itemClass.CLassGUID" @Html.Raw(item == null ? "" : (itemClass.CLassGUID.Equals(item.ItemClassGuid) ? " selected" : ""))>@itemClass.ClassName</option>
+                                            }
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="sDate" class="col-sm-1 control-label">@ViewBag.LabelStartDate</label>
+                                    <div class="col-sm-2">
+                                        <input type="text" class="form-control" data-field="startDate" id="sDate" @Html.Raw(item == null ? " value=\"" + ViewBag.StartDate + "\" placeholder=\"yyyy-mm-dd\"" : " value=\"" + item.startDate + "\" placeholder=\"mm/dd/yyyy\"") data-required />
+                                    </div>
+
+                                    <label for="eDate" class="col-sm-1 control-label">@ViewBag.LabelEndDate</label>
+                                    <div class="col-sm-2">
+                                        <input type="text" class="form-control" data-field="EndDate" id="eDate" @Html.Raw(item == null ?   " value=\"" + ViewBag.EndDate + "\" placeholder=\"yyyy-mm-dd\""  : " value=\"" + item.endDate + "\" placeholder=\"mm/dd/yyyy\"") data-required />
+                                    </div>
+
+                                    <div class="col-sm-2">
+                                        <select class="form-control" id="weekDay" data-field="weekDay" data-required>
+                                            <option value="1" @Html.Raw(item == null ? "" : (item.weekday.Equals("1") ? " selected" : ""))>周一 / Mon</option>
+                                            <option value="2" @Html.Raw(item == null ? "" : (item.weekday.Equals("2") ? " selected" : ""))>周二 / Tue</option>
+                                            <option value="3" @Html.Raw(item == null ? "" : (item.weekday.Equals("3") ? " selected" : ""))>周三 / Wed</option>
+                                            <option value="4" @Html.Raw(item == null ? "" : (item.weekday.Equals("4") ? " selected" : ""))>周四 / Thu</option>
+                                            <option value="5" @Html.Raw(item == null ? "" : (item.weekday.Equals("5") ? " selected" : ""))>周五 / Fri</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    
+                        <div class="tab-pane" id="tipsTab">
+                            <div>
+                                <select class="form-control" id="ingredientTips" data-field="ingredientTips" style="width:120px">
+                                    <option value="" @Html.Raw(item == null ? "" : (string.IsNullOrWhiteSpace(item.ingredientTips) ? " selected" : ""))></option>
+                                    <option value="Qty" @Html.Raw(item == null ? "" : (item.ingredientTips.Equals("Qty") ? " selected" : ""))>@ViewBag.LabelQty</option>
+                                    <option value="Ingredients" @Html.Raw(item == null ? "" : (item.ingredientTips.Equals("Ingredients") ? " selected" : ""))>@ViewBag.LabelIngredients</option>
+                                </select>
+                            </div>
+                            <br>
+                            <div>
+                                <label>中文</label>
+                                <textarea id="itips_CN" class="form-control blocked" rows="5" data-field="IngredientTips_CN">@Html.Raw(item == null ? "" : string.IsNullOrWhiteSpace(item.ingredientTips_CN)? "无": item.ingredientTips_CN)</textarea>
+                            </div>
+                            <div>
+                                <label>English</label>
+                                <textarea id="itips_EN" class="form-control blocked" rows="5" data-field="IngredientTips_EN">@Html.Raw(item == null ? "" : string.IsNullOrWhiteSpace(item.ingredientTips_EN)? "None": item.ingredientTips_EN)</textarea>
+                            </div>
+                        </div>
+                    }
+
+
+                    @if (ViewBag.ItemName_EN == "Picture of Chinese" || ViewBag.ItemName_EN == "Picture of English")
+                    {
+                        <div class="tab-pane active" id="pictureTab1">
+                            
+                                <div>
+                                    <div class="form-group">
+                                        <label for="sDate" class="col-sm-1 control-label">@ViewBag.LabelStartDate</label>
+                                        <div class="col-sm-3">
+                                            <input type="text" class="form-control" data-field="startDate" id="sDate" @Html.Raw(item == null ? " value=\"" + ViewBag.StartDate + "\" placeholder=\"yyyy-mm-dd\"" : " value=\"" + item.startDate + "\" placeholder=\"mm/dd/yyyy\"") data-required />
+                                        </div>
+                                        <label for="eDate" class="col-sm-1 control-label">@ViewBag.LabelEndDate</label>
+                                        <div class="col-sm-3">
+                                            <input type="text" class="form-control" data-field="EndDate" id="eDate" @Html.Raw(item == null ? " value=\"" + ViewBag.EndDate + "\" placeholder=\"yyyy-mm-dd\"" : " value=\"" + item.endDate + "\" placeholder=\"mm/dd/yyyy\"") data-required />
+                                        </div>
+                                    </div>
+                                    
+                                    <br>
+                                </div>
+                                <br><br>
+                            
+                                <div>
+                                    <label for="iType" class="col-sm-1 control-label">@ViewBag.LabelBusinessType</label>
+                                    <div class="col-sm-3">
+                                        <input type="text" class="form-control" data-field="ItemType" id="iType" @Html.Raw(item == null ? " value=\"" + ViewBag.SiteGuid + "\"" : " value=\"" + item.ItemType + "\"") @Html.Raw("disabled") data-required />
+                                    </div>
+                                    <label for="isort" class="col-sm-1 control-label">@ViewBag.LabelSort</label>
+                                    <div class="col-sm-2">
+                                        <input type="text" class="form-control" data-field="ItemSort" id="isort" @Html.Raw(item == null ? "" : " value=\"" + item.ItemSort + "\"") data-required />
+                                    </div>
+                                    <div class="col-sm-2">
+                                        <select id="status" data-field="ItemStatus" class="form-control">
+                                            <option value="1" @Html.Raw(item == null ? "" : (item.ItemStatus.Equals(1) ? " selected" : ""))>@ViewBag.LabelStatusActive</option>
+                                            <option value="0" @Html.Raw(item == null ? "" : (item.ItemStatus.Equals(0) ? " selected" : ""))>@ViewBag.LabelStatusBlock</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <br>
+
+                                <div hidden>
+                                    <input type="text" data-field="ItemGuid" value="@(item == null ? "" : item.ItemGuid)" />
+                                    <input type="text" data-field="langCode" value="@(item == null ? ViewBag.langCode : item.langCode)" />
+                                    <input type="text" data-field="ItemTips" value="@(item == null ? "img" : item.ItemTips)" />
+                                    <input type="text" data-field="ItemClassGuid" value="@(item == null ? ViewBag.ItemClassGuid : item.ItemClassGuid)" />
+                                </div>
+                                <br>
+                                <div>
+                                    <input type="file" data-tag="@Html.Raw(item == null ? ViewBag.SiteGuid : item.ItemType)" data-pic="@Html.Raw(item == null ? "" : item.ImageName1)" class="file-loading" accept="image/*">
+                                    <input type="hidden" id="@Html.Raw(item == null ? ViewBag.SiteGuid : item.ItemType)" data-field="Image1" value="@Html.Raw(item == null ? "" : item.Image1)" />
+                                </div>
+                            </div>
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">@ViewBag.LabelClose</button>
+            @if (ViewBag.Permission == "Full")
+            {
+                <button type="button" id="detailSave" class="btn btn-primary">@ViewBag.LabelSave</button>
+            }
+        </div>
+    </div>
+</div>
+<script>
+    $(function () {
+        $('#sDate,#eDate').datepicker({
+			autoclose: true,
+			format: '@(ViewBag.Language == "zh" ? "yyyy-mm-dd" : "mm/dd/yyyy")',
+			todayHighlight: true,
+			language: '@(ViewBag.Language == "zh" ? "zh-CN" : "")'
+		});
+        $('.file-loading').each(function () {
+           
+            var tag = $(this).attr('data-tag');
+            if (tag == "") {
+                var tag = $('#iType').val();
+            }
+
+            var picName = $(this).attr('data-pic');
+            $(this).fileinput({
+                language: '@ViewBag.Language',
+                uploadAsync: true,
+                uploadUrl: '@Url.Content("~/api/SEMIApi/UploadFGImageData/" + ViewBag.Language + "/?picFile=" + ViewBag.ParFile +"/"+ ViewBag.PicFile)&tag=' + tag + "&action=url&field=",
+                autoReplace: true,
+                overwriteInitial: true,
+                showUploadedThumbs: false,
+                maxFileCount: 1,
+                initialPreview: picName == '' ? [] : [
+                    "<img src='@ViewBag.PicUrl/@ViewBag.PicFile/" + tag + "/" + picName + "'>"
+                ],
+                initialCaption: picName,
+                initialPreviewShowDelete: false,
+                showRemove: false,
+                showClose: false,
+                showBrowse: '@ViewBag.Permission' == 'Full',
+            		showCaption: '@ViewBag.Permission' == 'Full',
+                layoutTemplates: {
+                    actionDelete: '',
+                    actionZoom: '',
+                    main1: '{preview}<div class="input-group {class}"><div class="input-group-btn">{browse}{upload}{remove}</div>{caption}</div>'
+                },
+                allowedFileExtensions: ["jpg", "png", "gif"]
+            }).on("fileuploaded", function (event, data, previewId, index) {
+                if (data.response.Status === 'ok') {
+                    var path = '@ViewBag.PicFile\\' + tag + '\\' + data.response.FileName;
+                    $('#' + tag).val(path);
+                }
+                else {
+                    $('#alertModal .modal-body').html('<p><strong>' + data.response.Msg + '</strong></p>');
+                    $('#alertModal').modal('show');
+                }
+            });
+        });
+        $('#detailSave').on('click', function () {
+            var checked = true;
+            var id = '';
+            //检查所有input标签中data-required必选项值是否为空
+            $('#FGDetail input[data-required],#FGDetail textarea[data-required]').each(function () {
+                if ($.trim($(this).val()) == '') {
+                    $(this).parent('div').addClass('has-error');
+                    if (id === '') id = $(this).parents('div.tab-pane').attr('id');
+                    checked = false;
+                }
+            });
+            if (!checked) {
+                if (id !== '') $("ul.nav-tabs a[href='#" + id + "']").tab('show');
+                return;
+            }
+            var jsonBuilder = new StringBuilder();
+            $('#mastTab input[data-field],#tipsTab textarea[data-field],#cookingTab textarea[data-field],#instructionTab textarea[data-field]').each(function () {
+                if (jsonBuilder.length() > 0) jsonBuilder.append(',');
+                if ($(this).attr('type') == 'checkbox') {
+                    jsonBuilder.append("\"" + $(this).attr('data-field') + "\":\"" + ($(this).prop('checked') ? "1" : "0") + "\"");
+                }
+                else {
+                    jsonBuilder.append("\"" + $(this).attr('data-field') + "\":\"" + $.jsonCheck($(this).val()) + "\"");
+                }
+            });
+            $('#pictureTab1 input[data-field]').each(function () {
+                if (jsonBuilder.length() > 0) jsonBuilder.append(',');
+                jsonBuilder.append("\"" + $(this).attr('data-field') + "\":\"" + $.jsonCheck($(this).val()) + "\"");
+            });
+            $('#pictureTab1 select[data-field]').each(function () {
+                if (jsonBuilder.length() > 0) jsonBuilder.append(',');
+                jsonBuilder.append("\"" + $(this).attr('data-field') + "\":\"" + $(this).children('option:selected').val() + "\"");
+            });
+            $('#mastTab select[data-field]').each(function () {
+                if (jsonBuilder.length() > 0) jsonBuilder.append(',');
+                jsonBuilder.append("\"" + $(this).attr('data-field') + "\":\"" + $(this).children('option:selected').val() + "\"");
+            });
+            $('#tipsTab select[data-field]').each(function () {
+                if (jsonBuilder.length() > 0) jsonBuilder.append(',');
+                jsonBuilder.append("\"" + $(this).attr('data-field') + "\":\"" + $(this).children('option:selected').val() + "\"");
+            });
+            var properyBuilder = new StringBuilder();
+            $('#properyTab input[data-field]').each(function () {
+                if (properyBuilder.length() > 0) properyBuilder.append(',');
+                properyBuilder.append("{\"DictCode\":\"" + $(this).attr('data-field') + "\","
+                    + "\"PropValue\":\"" + $.jsonCheck($(this).val()) + "\",\"DictName\":\"" + $(this).attr('data-field-name') + "\"}");
+            });
+            if (properyBuilder.length() > 0) {
+                properyBuilder.insert(0, ",\"ItemProperies\":[").append("]");
+                jsonBuilder.append(properyBuilder.toString());
+            }
+            if (jsonBuilder.length() > 0) {
+                jsonBuilder.append(",\"ItemType\":\""+$('#iType').val()+"\"}").insert(0, "{");
+                $('#FGDetail button').prop('disabled', true);
+                actionRequest.post({
+                    url: '@Url.Content("~/api/SEMIApi/EditMenuItem/" + ViewBag.Language)',
+                    postData: $.parseJSON(jsonBuilder.toString()),
+                    success: function (response) {
+                        if (response !== undefined && response !== null && response.Status == 'ok') {
+                            $('#searchKey').val(response.Msg);
+                            Item.search('@ViewBag.Type');
+                            $('#commonModal').modal('hide');
+                        }
+                        else {
+                            $('#FGDetail button').prop('disabled', false);
+                            $('#alertModal .modal-body').html('<p><strong>'
+                               + (response === undefined || response === null ? "Server error" : response.Msg) + '</strong></p>');
+                            $('#alertModal').modal('show');
+                        }
+                    },
+                    error: function (msg) {
+                        $('#alertModal .modal-body').html('<p><strong>' + msg + '</strong></p>');
+                        $('#alertModal').modal('show');
+                        $('#FGDetail button').prop('disabled', false);
+                    }
+                });
+            }
+        });
+        
+        $("#FGDetail input[data-required],#FGDetail textarea[data-required]").attr('placeholder', '@ViewBag.LabelRequired').on('focus', function () {
+            $(this).parent('div').removeClass('has-error');
+        });
+        
+       
+        $('#FGDetail input[type="checkbox"].minimal').iCheck({
+            checkboxClass: 'icheckbox_minimal-blue',
+            radioClass: 'iradio_minimal-blue'
+        });
+
+        $("#othercost").inputmask("decimal", { allowMinus: false });
+
+    });
+</script>

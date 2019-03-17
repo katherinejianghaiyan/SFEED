@@ -1,0 +1,66 @@
+﻿<div class="modal-dialog modal-lg">
+    <div class="modal-content">
+        <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+            <h4 class="modal-title">@ViewBag.LabelPicUpload</h4>
+        </div>
+        <div class="modal-body">
+            <div class="nav-tabs-custom">
+                <ul class="nav nav-tabs">
+                    <li class="active"><a href="#pictureTab1" data-toggle="tab">@ViewBag.LabelPicture1</a></li>
+                    <li><a href="#pictureTab2" data-toggle="tab">@ViewBag.LabelPicture2</a></li>
+                    <li><a href="#pictureTab3" data-toggle="tab">@ViewBag.LabelPicture3</a></li>
+                </ul>
+                <div class="tab-content">
+                    <div class="tab-pane active" id="pictureTab1">
+                        <input type="file" data-tag="imgs1" data-field="Image1" multiple webkitdirectory class="file-loading" accept="image/*">
+                        <div id="imgs1" class="alert alert-warning fade in" style="margin-top:10px;display:none"></div>
+                    </div>
+                    <div class="tab-pane" id="pictureTab2">
+                        <input type="file" data-tag="imgs2" data-field="Image2" multiple webkitdirectory class="file-loading" accept="image/*">
+                        <div id="imgs2" class="alert alert-warning fade in" style="margin-top:10px;display:none"></div>
+                    </div>
+                    <div class="tab-pane" id="pictureTab3">
+                        <input type="file" data-tag="imgs3" data-field="Image3" multiple webkitdirectory class="file-loading" accept="image/*">
+                        <div id="imgs3" class="alert alert-warning fade in" style="margin-top:10px;display:none"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">@ViewBag.LabelClose</button>
+        </div>
+    </div>
+</div>
+<script>
+    $(function () {
+        $('.file-loading').each(function () {
+            var tag = $(this).attr('data-tag');
+            var filed = $(this).attr('data-field');
+            $(this).fileinput({
+                language: '@ViewBag.Language',
+                uploadAsync: true,
+                uploadUrl: '@Url.Content("~/api/SEMIApi/UploadFGImageData/" + ViewBag.Language + "/?picFile=" + ViewBag.PicFile)&tag=' + tag + "&action=file&field=" + filed,
+                showUploadedThumbs: false,
+                showClose: false,
+                layoutTemplates: {
+                    actionZoom: '',
+                    main1: '{preview}<div class="input-group {class}"><div class="input-group-btn">{browse}{upload}{remove}'
+                        + '</div>{caption}</div>'
+                },
+                allowedFileExtensions: ["jpg", "png", "gif"]
+            }).on('filebatchpreupload', function (event, data, id, index) {
+                $('#' + tag).fadeIn('slow');
+            }).on("fileuploaded", function (event, data, previewId, index) {
+                if (data.response.Status !== 'ok') {
+                    var fname = data.files[index].name;
+                    $('#' + tag + ' ul').append('<li><strong>' + fname + '</strong>:' + data.response.Msg + '</li>');
+                }
+            }).on("filebatchselected", function (event, files) {
+                $('#' + tag).html('<h4>Process Status</h4><ul></ul>').hide();
+            });
+        });
+    });
+</script>
